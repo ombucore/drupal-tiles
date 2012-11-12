@@ -1,0 +1,50 @@
+<?php
+
+/**
+ * @file
+ * Install functions for tiles.module.
+ */
+
+/**
+ * Implements hook_schema().
+ */
+function tiles_schema() {
+  $schema['tiles_width'] = array(
+    'description' => 'Stores widths of tiles',
+    'fields' => array(
+      'context_id' => array(
+        'description' => 'The primary identifier for a context.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'bid' => array(
+        'description' => 'The {block}.bid to store the width for.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'width' => array(
+        'description' => 'The width of block.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+    ),
+    'foreign keys' => array(
+      'context_id' => array(
+        'table' => 'context',
+        'columns' => array('context_id' => 'name'),
+      ),
+      'bid' => array(
+        'table' => 'block',
+        'columns' => array('bid' => 'bid'),
+      ),
+    ),
+    'unique keys' => array(
+      'context_id_bid' => array('context_id', 'bid'),
+    ),
+  );
+  return $schema;
+}

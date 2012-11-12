@@ -1,0 +1,193 @@
+/* Basic CSS3 Mixins (not using Toolkit to keep this independent of submodules) PS NO IE SUPPORT!! */
+.gradient(@start: #333333, @stop: #999999) {
+  background:@start;
+  background: -webkit-linear-gradient(@start, @stop);
+  background: -moz-linear-gradient(center top, @start 0%, @stop 100%);
+  background: linear-gradient(@start, @stop);
+}
+.border-radius(@radius:10px) {
+    -webkit-background-clip: padding-box;
+    -webkit-border-radius: @arguments;
+    -moz-background-clip: padding-box;
+    -moz-border-radius: @arguments;
+    border-radius: @arguments;
+    background-clip: padding-box;
+}
+.transition(@property:background, @duration:0.2s, @function:ease-in) {
+  -moz-transition: @arguments;
+  -webkit-transition: @arguments;
+  transition: @arguments;
+}
+/*End Mixins
+************/
+.tile-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 1000; /* +1 than contextual menu */
+  height: 100%;
+  width: 100%;
+  background-color: #646464;
+  background-color: rgba(100, 100, 100, 0.9);
+  .inner { /* Vertical Centering */
+    display: table;
+    width: 100%;
+    height: 100%;
+    .control-wrapper {
+      vertical-align: middle;
+      display: table-cell;
+      width: 100%;
+    }
+  }
+}
+
+.dragging.tile {
+  position: relative;
+  [class*=move] {
+    background-image: url(img/sprite.png);
+    background-color: transparent;
+    width: 41px;
+    height: 41px;
+    position: absolute;
+    text-indent: -9999px;
+    border: 0;
+  }
+  .move-left {
+    background-position: -1px -48px;
+    left: 12%;
+    &:hover {
+      background-position: -65px -48px;
+    }
+  }
+  .move-right {
+    background-position: -1px -92px;
+    right: 12%;
+    &:hover {
+      background-position: -65px -92px;
+    }
+  }
+  .save {
+    margin: 11px auto 0;
+    width: 67px;
+    padding: 5px 0;
+    border: solid 1px #424242;
+    display: block;
+    text-transform: uppercase;
+    font-size: 12px;
+    .gradient(#F3F3F3, #AAAAAA);
+    .border-radius(3px);
+    &:hover {
+      .gradient(#AAAAAA, #F3F3F3);
+    }
+  }
+  .cancel {
+    margin: 10px auto 0;
+    width: 67px;
+    text-align: center;
+    text-transform: uppercase;
+    color: white;
+    text-decoration: underline;
+    display: block;
+    font-size: 12px;
+    cursor: pointer;
+    .transition(color);
+    &:hover {
+      color: darken(#fff, 5%);
+    }
+  }
+}
+.sidebar .dragging.block {
+  .move-left {
+    -webkit-transform: rotate(90deg);
+    -moz-transform: rotate(90deg);
+    transform: rotate(90deg);
+    filter: e('progid:DXImageTransform.Microsoft.BasicImage(rotation=1)');
+    margin-top: -4px;
+  }
+  .move-right {
+    -webkit-transform: rotate(90deg);
+    -moz-transform: rotate(90deg);
+    transform: rotate(90deg);
+    filter: e('progid:DXImageTransform.Microsoft.BasicImage(rotation=1)');
+    margin-top: 12px;
+  }
+}
+.contextual-links { 
+  .bean-type >a {/*Displays type of Bean at top of contextual menu. */
+    font-style: italic;
+    color: #bbb !important;
+    cursor: default;
+    &:hover {background-color: transparent;}
+  }
+}
+
+// hilights all regions during dragging
+// TODO: only the region of the dragging block should be hilighted
+.dragging div[data-type='region'] {
+  border: 2px dotted green;
+}
+
+.resizing.tile {
+  position: relative;
+  .width-minus, .width-plus {
+    background-color: transparent;
+    position: absolute;
+    border: 0;
+    color: #FFFFFF;
+    font-size: 60px;
+    line-height: 60px;
+    font-family: Arial, sans-serif;
+    text-shadow: -1px 0 black, 0 1px black, 1px 0 black, 0 -1px black;
+    -moz-text-shadow: -1px 0 black, 0 1px black, 1px 0 black, 0 -1px black;
+    -webkit-text-shadow: -1px 0 black, 0 1px black, 1px 0 black, 0 -1px black;
+    &:hover {
+      color: rgb(86, 164, 205);
+    }
+  }
+  .width-minus {
+    left: 12%;
+  }
+  .width-plus {
+    right: 12%;
+  }
+  .width-current {
+    margin: 0 auto 11px;
+    width: auto;
+    display: block;
+    font-size: 18px;
+    color: #FFFFFF;
+    text-align: center;
+    text-shadow: -1px 0 black, 0 1px black, 1px 0 black, 0 -1px black;
+    -moz-text-shadow: -1px 0 black, 0 1px black, 1px 0 black, 0 -1px black;
+    -webkit-text-shadow: -1px 0 black, 0 1px black, 1px 0 black, 0 -1px black;
+  }
+  .save {
+    margin: 11px auto 0;
+    width: 67px;
+    padding: 5px 0;
+    border: solid 1px #424242;
+    display: block;
+    text-transform: uppercase;
+    font-size: 12px;
+    .gradient(#F3F3F3, #AAAAAA);
+    .border-radius(3px);
+    &:hover {
+      .gradient(#AAAAAA, #F3F3F3);
+    }
+  }
+  .cancel {
+    margin: 10px auto 0;
+    width: 67px;
+    text-align: center;
+    text-transform: uppercase;
+    color: white;
+    text-decoration: underline;
+    display: block;
+    font-size: 12px;
+    cursor: pointer;
+    .transition(color);
+    &:hover {
+      color: darken(#fff, 5%);
+    }
+  }
+}
