@@ -720,22 +720,21 @@ function tiles_get_context($type, $identifier) {
 function tiles_create_context($path) {
   // Create a new context.
   $context = new stdClass();
-  $context->tag = 'tiles';
-
-  // Make sure system_main is always in the default block array.  That way
-  // the main content block can be orderable within this context (ftw!).
-  if (!in_array('system-main', $default_blocks)) {
-    $default_blocks['system-main'] = array(
-      'module' => 'system',
-      'delta' => 'main',
-      'region' => 'content',
-      'weight' => '0',
-    );
-  }
 
   // Normalize path and set as context name.
   $context->name = 'tiles-' . _tiles_normalize_path($path);
+  $context->tag = 'tiles';
   $context->description = '';
+
+
+  // Make sure system_main is always in the default block array.  That way
+  // the main content block can be orderable within this context (ftw!).
+  $context->reactions['tiles']['blocks']['system-main'] = array(
+    'module' => 'system',
+    'delta' => 'main',
+    'region' => 'content',
+    'weight' => '0',
+  );
 
   // Set the path as the only condition.
   $context->conditions = array(
