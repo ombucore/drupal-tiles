@@ -821,7 +821,7 @@ function theme_tiles_row($variables) {
  * Default implementation of theme_tiles_tile().
  */
 function theme_tiles_tile($variables) {
-  return '<div class="tiles-tile span' . $width . '">' . $variables['element']['#children'] . '</div>';
+  return '<div class="tiles-tile span' . $variables['width'] . '">' . $variables['element']['#children'] . '</div>';
 }
 
 /**
