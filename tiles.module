@@ -821,9 +821,16 @@ function theme_tiles_row($variables) {
  * Default implementation of theme_tiles_tile().
  */
 function theme_tiles_tile($variables) {
-  return '<div class="tiles-tile">' . $variables['element']['#children'] . '</div>';
+  return '<div class="tiles-tile span' . $width . '">' . $variables['element']['#children'] . '</div>';
 }
 
+/**
+ * Preprocess function for theme_tiles_tile().
+ */
+function template_preprocess_tiles_tile(&$variables) {
+  // Expose block width as an available variable to themers.
+  $variables['width'] = $variables['element']['#block']->width;
+}
 
 /**
  * Private functions
