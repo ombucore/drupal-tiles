@@ -36,7 +36,7 @@ function tiles_menu() {
   );
 
   $items['admin/structure/block/manage/%/%/set_width'] = array(
-    'title' => 'Width',
+    'title' => 'Resize',
     'type' => MENU_LOCAL_TASK,
     'context' => MENU_CONTEXT_INLINE,
     'page callback' => '_tiles_width',
