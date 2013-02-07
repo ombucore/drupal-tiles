@@ -61,7 +61,7 @@ function tiles_access_user_access($block, $account = NULL) {
   // Check if any of the roles that the user has exist in the allowed access
   // control list.
   if ($acl) {
-    return count(array_intersect($account->roles, $acl)) > 0;
+    return count(array_intersect(array_keys($account->roles), $acl)) > 0;
   }
   // Default to allowing access.
   else {
