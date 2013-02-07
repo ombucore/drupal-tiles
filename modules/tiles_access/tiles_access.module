@@ -18,7 +18,7 @@ function tiles_access_menu() {
     'context' => MENU_CONTEXT_INLINE,
     'page callback' => 'drupal_get_form',
     'page arguments' => array('tiles_access_form', 4, 5),
-    'access arguments' => array('administer permissions'),
+    'access arguments' => array('administer blocks'),
     'weight' => -9,
     'file' => 'tiles_access.admin.inc',
   );
