@@ -361,8 +361,9 @@ function tiles_contextual_links_view_alter(&$element, $items) {
       // some sort of context.
       // @todo: figure out if this link can be disabled, or at least provide
       // some default styling in the module.
-      $bid = element_children($element['#element']['content']['bean']);
-      $label = $types[$element['#element']['content']['bean'][$bid[0]]['#entity']->type]->getLabel();
+      $bean = isset($element['#element']['content']['bean']) ? $element['#element']['content']['bean'] : $element['#element']['bean'];
+      $bid = element_children($bean);
+      $label = $types[$bean[$bid[0]]['#entity']->type]->getLabel();
       $element['#links'] = array(
         'bean-type' => array(
           'title' => $label,
