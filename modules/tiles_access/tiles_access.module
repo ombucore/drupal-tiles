@@ -18,12 +18,26 @@ function tiles_access_menu() {
     'context' => MENU_CONTEXT_INLINE,
     'page callback' => 'drupal_get_form',
     'page arguments' => array('tiles_access_form', 4, 5),
-    'access arguments' => array('administer blocks'),
+    'access callback' => 'tiles_access_access',
+    'access arguments' => array(4, 5),
     'weight' => -9,
     'file' => 'tiles_access.admin.inc',
   );
 
   return $items;
+}
+
+/**
+ * Access callback for block access configuration.
+ *
+ * Don't allow system main block to be hidden.
+ */
+function tiles_access_access($module, $delta) {
+  if ($module == 'system' && $delta == 'main') {
+    return FALSE;
+  }
+
+  return user_access('administer blocks');
 }
 
 /**
@@ -57,6 +71,11 @@ function tiles_access_user_access($block, $account = NULL) {
   }
 
   $acl = tiles_access_get_block_settings($block->module, $block->delta);
+
+  if ($block->module == 'system') {
+    dpm($block);
+    dpm($acl);
+  }
 
   // Check if any of the roles that the user has exist in the allowed access
   // control list.
@@ -130,4 +149,7 @@ function tiles_access_save_block_settings($module, $delta, $roles) {
 
   // Update access cache.
   tiles_access_get_block_settings($module, $delta, $roles);
+
+  // Clear all page/block caches.
+  cache_clear_all();
 }
