@@ -72,11 +72,6 @@ function tiles_access_user_access($block, $account = NULL) {
 
   $acl = tiles_access_get_block_settings($block->module, $block->delta);
 
-  if ($block->module == 'system') {
-    dpm($block);
-    dpm($acl);
-  }
-
   // Check if any of the roles that the user has exist in the allowed access
   // control list.
   if ($acl) {
