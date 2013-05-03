@@ -25,6 +25,9 @@
   display: table-cell;
   width: 100%;
 }
+.overlay-open .tile-overlay {
+  z-index: 499;
+}
 .dragging.tile {
   position: relative;
 }
