@@ -159,13 +159,15 @@
     $.ajax({
       type: 'POST',
       url: window.location.toString(),
-      headers: {'X-TILES': 1},
       data: JSON.stringify(manifest),
       dataType: 'html',
-      success: [
-        $.proxy(this.handleRequestRegionSuccess, this),
-        callback
-      ],
+      beforeSend: function(xhr) {
+        xhr.setRequestHeader('X-TILES', 1);
+      },
+      success: $.proxy(function(data, textStatus, jqXHR) {
+        this.handleRequestRegionSuccess(data, textStatus, jqXHR);
+        callback(data, textStatus, jqXHR);
+      }, this),
       error: $.proxy(this, 'handleRequestRegionError')
     });
   };
