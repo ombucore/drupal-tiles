@@ -65,6 +65,16 @@
     return this;
   };
 
+  Tiles.prototype.setInProgress = function() {
+    this.domNode.addClass('in-progress');
+    return this;
+  };
+
+  Tiles.prototype.unsetInProgress = function() {
+    this.domNode.removeClass('in-progress');
+    return this;
+  };
+
   /**
    * TODO Use jQuery template
    */
@@ -98,6 +108,7 @@
       alert('This is already the first block in this region.');
       return false;
     }
+    this.setInProgress();
     var tile_index = manifest.blockIndex[this.module + '-' + this.delta];
     var prev_tile_index = tile_index - 1;
     var tile_weight = manifest.blocks[tile_index].weight;
@@ -116,6 +127,7 @@
       alert('This is already the last block in this region.');
       return false;
     }
+    this.setInProgress();
     var tile_index = manifest.blockIndex[this.module + '-' + this.delta];
     var next_tile_index = tile_index + 1;
     var tile_weight = manifest.blocks[tile_index].weight;
@@ -177,7 +189,10 @@
     Drupal.attachBehaviors(this.region, Drupal.settings);
   };
 
-  Tiles.prototype.handleRequestRegionError = function(jqXHR, textStatus, errorThrown) {};
+  Tiles.prototype.handleRequestRegionError = function(jqXHR, textStatus, errorThrown) {
+    this.unsetInProgress();
+    alert("There was an error changing this tile.");
+  };
 
   Tiles.prototype.saveManifest = function() {
     var manifest = this.regionManifest();
@@ -251,6 +266,7 @@
       return false;
     }
 
+    this.setInProgress();
     manifest.blocks[tile_index].width = new_width;
     this.requestRegion(manifest, $.proxy(function() {
       $("[data-module='" + this.module + "'][data-delta='" + this.delta + "'] " + this.selector.resizeLink).click();
@@ -272,6 +288,7 @@
       return false;
     }
 
+    this.setInProgress();
     manifest.blocks[tile_index].width = new_width;
     this.requestRegion(manifest, $.proxy(function() {
       $("[data-module='" + this.module + "'][data-delta='" + this.delta + "'] " + this.selector.resizeLink).click();

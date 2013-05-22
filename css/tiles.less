@@ -49,9 +49,11 @@
   [class*=move] {
     background-image: url(img/sprite.png);
     background-color: transparent;
+    position: absolute;
     width: 41px;
     height: 41px;
-    position: absolute;
+    top: 50%;
+    margin-top: -21px;
     text-indent: -9999px;
     border: 0;
   }
@@ -70,7 +72,7 @@
     }
   }
   .save {
-    margin: 11px auto 0;
+    margin: 30px auto 0;
     width: 67px;
     padding: 5px 0;
     border: solid 1px #424242;
@@ -115,7 +117,7 @@
     margin-top: 12px;
   }
 }
-.contextual-links { 
+.contextual-links {
   .bean-type >a {/*Displays type of Bean at top of contextual menu. */
     font-style: italic;
     color: #bbb !important;
@@ -139,6 +141,8 @@
     color: #FFFFFF;
     font-size: 60px;
     line-height: 60px;
+    top: 50%;
+    margin-top: -30px;
     font-family: Arial, sans-serif;
     text-shadow: -1px 0 black, 0 1px black, 1px 0 black, 0 -1px black;
     -moz-text-shadow: -1px 0 black, 0 1px black, 1px 0 black, 0 -1px black;
@@ -192,5 +196,26 @@
     &:hover {
       color: darken(#fff, 5%);
     }
+  }
+}
+
+.in-progress.tile {
+  .tile-overlay {
+    &:after {
+      content: "";
+      position: absolute;
+      width: 76%;
+      height: 30px;
+      top: 50%;
+      left: 50%;
+      margin-left: -38%;
+      margin-top: -15px;
+      background-image: url(img/progress.gif);
+      background-repeat: repeat;
+      border: 1px solid #646464;
+      .border-radius(10px);
+    }
+
+    > * { display: none; }
   }
 }
