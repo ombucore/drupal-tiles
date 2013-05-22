@@ -261,7 +261,7 @@
     var step_index = $.inArray(tile_width, steps);
     var new_width = steps[step_index + 1];
 
-    if (new_width > steps[-1]) {
+    if (new_width === undefined) {
       alert('This tile is already full width.');
       return false;
     }
@@ -283,7 +283,7 @@
     var step_index = $.inArray(tile_width, steps);
     var new_width = steps[step_index - 1];
 
-    if (new_width < steps[0]) {
+    if (new_width === undefined) {
       alert('This tile is already at the minimum width.');
       return false;
     }
