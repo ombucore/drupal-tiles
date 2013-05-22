@@ -1,26 +1,26 @@
 (function ($) {
   Drupal.behaviors.tiles = {
     attach: function(context, settings) {
-      $(Tiles.prototype.selector.moveLink, context).click(function (e) {
+      $(Tile.prototype.selector.moveLink, context).click(function (e) {
         e.preventDefault();
         e.stopPropagation();
         $(e.target).blur();
-        if ($(e.target).closest(Tiles.prototype.selector.tile).hasClass('dragging')) {
+        if ($(e.target).closest(Tile.prototype.selector.tile).hasClass('dragging')) {
           return;
         }
-        block = new Tiles(e.target);
+        block = new Tile(e.target);
         block.setDraggable();
       });
 
-      $(Tiles.prototype.selector.resizeLink, context).once('block-width', function() {
+      $(Tile.prototype.selector.resizeLink, context).once('block-width', function() {
         $(this).click(function(e) {
           e.preventDefault();
           e.stopPropagation();
           $(e.target).blur();
-          if ($(e.target).closest(Tiles.prototype.selector.tile).hasClass('dragging')) {
+          if ($(e.target).closest(Tile.prototype.selector.tile).hasClass('dragging')) {
             return;
           }
-          block = new Tiles(e.target);
+          block = new Tile(e.target);
           block.setResizable();
         });
       });
@@ -28,11 +28,11 @@
   };
 
   /**
-   * @class Tiles
+   * @class Tile
    *   Encapsulate js functionality for a tile.
    */
 
-  Tiles = function(domNode) {
+  Tile = function(domNode) {
     $d = $(domNode);
     this.domNode = $d.attr('data-type') === 'block' ? $d : $d.closest(this.selector.tile);
     // Close the contextual links.
@@ -43,7 +43,7 @@
     this.width = parseInt(this.domNode.attr('data-width'), 10);;
   };
 
-  Tiles.prototype.selector = {
+  Tile.prototype.selector = {
     tile: '.tile',
     region: '[data-type="region"]',
     row: '.row-fluid',
@@ -51,26 +51,26 @@
     resizeLink: '.contextual-links .block-set-width a'
   };
 
-  Tiles.prototype.setDraggable = function() {
+  Tile.prototype.setDraggable = function() {
     this.domNode.addClass('dragging');
     $('body').addClass('dragging');
     this.addMoveOverlay();
     return this;
   };
 
-  Tiles.prototype.unsetDraggable = function() {
+  Tile.prototype.unsetDraggable = function() {
     this.domNode.removeClass('dragging');
     $('body').removeClass('dragging');
     this.removeMoveOverlay();
     return this;
   };
 
-  Tiles.prototype.setInProgress = function() {
+  Tile.prototype.setInProgress = function() {
     this.domNode.addClass('in-progress');
     return this;
   };
 
-  Tiles.prototype.unsetInProgress = function() {
+  Tile.prototype.unsetInProgress = function() {
     this.domNode.removeClass('in-progress');
     return this;
   };
@@ -78,7 +78,7 @@
   /**
    * TODO Use jQuery template
    */
-  Tiles.prototype.addMoveOverlay = function() {
+  Tile.prototype.addMoveOverlay = function() {
     // Prevent irresponsible js plugins (twitter I'm looking at you) from using
     // document.write after a block is moved. Using document.write after a page
     // load overwrites the whole dom.
@@ -96,12 +96,12 @@
     return this;
   };
 
-  Tiles.prototype.removeMoveOverlay = function() {
+  Tile.prototype.removeMoveOverlay = function() {
     $('.tile-overlay', this.domNode).remove();
     return this;
   };
 
-  Tiles.prototype.moveLeft = function(e) {
+  Tile.prototype.moveLeft = function(e) {
     var manifest = this.regionManifest();
     if (manifest.blocks[0].module === this.module &&
         manifest.blocks[0].delta === this.delta) {
@@ -120,7 +120,7 @@
     return false;
   };
 
-  Tiles.prototype.moveRight = function(e) {
+  Tile.prototype.moveRight = function(e) {
     var manifest = this.regionManifest();
     if (manifest.blocks[manifest.blocks.length-1].module === this.module &&
         manifest.blocks[manifest.blocks.length-1].delta === this.delta) {
@@ -139,11 +139,11 @@
     return false;
   };
 
-  Tiles.prototype.moveCancel = function(e) {
+  Tile.prototype.moveCancel = function(e) {
     window.location.reload();
   };
 
-  Tiles.prototype.regionManifest = function() {
+  Tile.prototype.regionManifest = function() {
     var region = this.region.attr('data-name');
     var manifest = {
       region: region,
@@ -167,7 +167,7 @@
     return manifest;
   };
 
-  Tiles.prototype.requestRegion = function(manifest, callback) {
+  Tile.prototype.requestRegion = function(manifest, callback) {
     $.ajax({
       type: 'POST',
       url: window.location.toString(),
@@ -184,17 +184,17 @@
     });
   };
 
-  Tiles.prototype.handleRequestRegionSuccess = function(data, textStatus, jqXHR) {
+  Tile.prototype.handleRequestRegionSuccess = function(data, textStatus, jqXHR) {
     this.region.html(data);
     Drupal.attachBehaviors(this.region, Drupal.settings);
   };
 
-  Tiles.prototype.handleRequestRegionError = function(jqXHR, textStatus, errorThrown) {
+  Tile.prototype.handleRequestRegionError = function(jqXHR, textStatus, errorThrown) {
     this.unsetInProgress();
     alert("There was an error changing this tile.");
   };
 
-  Tiles.prototype.saveManifest = function() {
+  Tile.prototype.saveManifest = function() {
     var manifest = this.regionManifest();
     $.ajax({
       type: 'POST',
@@ -207,24 +207,24 @@
     return false;
   };
 
-  Tiles.prototype.saveHandleSuccess = function() {
+  Tile.prototype.saveHandleSuccess = function() {
     this.unsetDraggable();
     this.unsetResizable();
   };
 
-  Tiles.prototype.saveHandleError = function() {
+  Tile.prototype.saveHandleError = function() {
     alert('Sorry, there was a problem saving the updated layout. Please try again after the page reloads.');
     window.location.reload();
   };
 
-  Tiles.prototype.setResizable = function() {
+  Tile.prototype.setResizable = function() {
     this.domNode.addClass('resizing');
     $('body').addClass('resizing');
     this.addResizeOverlay();
     return this;
   };
 
-  Tiles.prototype.unsetResizable = function() {
+  Tile.prototype.unsetResizable = function() {
     this.domNode.removeClass('resizing');
     $('body').removeClass('resizing');
     this.removeResizeOverlay();
@@ -234,7 +234,7 @@
   /**
    * TODO Use jQuery template
    */
-  Tiles.prototype.addResizeOverlay = function() {
+  Tile.prototype.addResizeOverlay = function() {
     // Prevent irresponsible js plugins (twitter I'm looking at you) from using
     // document.write after a block is moved. Using document.write after a page
     // load overwrites the whole dom.
@@ -253,7 +253,7 @@
     return this;
   };
 
-  Tiles.prototype.widthPlus = function(e) {
+  Tile.prototype.widthPlus = function(e) {
     var manifest = this.regionManifest();
     var tile_index = manifest.blockIndex[this.module + '-' + this.delta];
     var tile_width = this.width;
@@ -275,7 +275,7 @@
     return false;
   };
 
-  Tiles.prototype.widthMinus = function(e) {
+  Tile.prototype.widthMinus = function(e) {
     var manifest = this.regionManifest();
     var tile_index = manifest.blockIndex[this.module + '-' + this.delta];
     var tile_width = this.width;
@@ -297,12 +297,12 @@
     return false;
   };
 
-  Tiles.prototype.removeResizeOverlay = function() {
+  Tile.prototype.removeResizeOverlay = function() {
     $('.tile-overlay', this.domNode).remove();
     return this;
   };
 
-  Tiles.prototype.resizeCancel = function(e) {
+  Tile.prototype.resizeCancel = function(e) {
     window.location.reload();
   };
 
