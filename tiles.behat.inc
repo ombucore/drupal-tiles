@@ -1,5 +1,6 @@
 <?php
 
+
 use Drupal\DrupalExtension\Context\DrupalSubContextInterface;
 use Behat\MinkExtension\Context\RawMinkContext;
 
@@ -25,6 +26,20 @@ class TilesContext extends RawMinkContext implements DrupalSubContextInterface {
         throw new \Exception(sprintf("The text '%s' was not found in any Tile'
          . 'heading on the page %s", $heading, $this->getSession()
             ->getCurrentUrl()));
+    }
+
+    /**
+     * @Then /^There are (\d+) (\w+) titles$/
+     */
+    public function thereAreRteTitles($count, $type) {
+        $element = $this->getSession()->getPage();
+        $nodes = $element->findAll('css', '.tile.bean-rte-rte');
+        $found = count($nodes);
+        if($found != $count) {
+            throw new Exception("Found ${found}." . "Expected $count $type
+            tiles and");
+        }
+
     }
 
 }
