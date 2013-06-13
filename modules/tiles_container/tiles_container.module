@@ -1,0 +1,205 @@
+<?php
+
+/**
+ * @file
+ * Bean container module.
+ */
+
+/**
+ * Hook Implementations.
+ */
+
+/**
+ * Implements hook_bean_types_api_info().
+ */
+function tiles_container_bean_types_api_info() {
+  return array(
+    'api' => bean_current_version(),
+  );
+}
+
+/**
+ * Implements hook_bean_types().
+ */
+function tiles_container_bean_types() {
+  $plugins = array();
+  $plugin_path = drupal_get_path('module', 'tiles_container') . '/includes';
+
+  $plugins['tiles_container'] = array(
+    'label' => t('Block Container'),
+    'handler' => array(
+      'class' => 'TilesContainer',
+      'parent' => 'BeanPlugin',
+      'path' => $plugin_path,
+      'file' => 'TilesContainer.php',
+    ),
+    'file' => 'TilesContainer.php',
+    'path' => $plugin_path,
+    'editable' => TRUE,
+  );
+
+  return $plugins;
+}
+
+/**
+ * Implements hook_menu().
+ */
+function tiles_container_menu() {
+  $items = array();
+
+  $items['block/%bean_delta/manage-children'] = array(
+    'title' => 'Manage Children',
+    'type' => MENU_LOCAL_TASK,
+    'context' => MENU_CONTEXT_PAGE | MENU_CONTEXT_INLINE,
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('tiles_container_manage_children', 1),
+    'access callback' => 'tiles_container_menu_access',
+    'access arguments' => array(1),
+    'file' => 'tiles_container.admin.inc',
+  );
+
+  $items['block/%bean_delta/manage-children/add-block'] = array(
+    'title' => 'Add block',
+    'type' => MENU_LOCAL_ACTION,
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('tiles_container_add_block', 1),
+    'access callback' => 'tiles_container_menu_access',
+    'access arguments' => array(1),
+    'file' => 'tiles_container.admin.inc',
+  );
+
+
+  return $items;
+}
+
+/**
+ * Implements hook_admin_paths().
+ */
+function tiles_container_admin_paths() {
+  $paths = array(
+    'block/*/add-block' => TRUE,
+    'block/*/manage-children' => TRUE,
+  );
+  return $paths;
+}
+
+/**
+ * Implements hook_theme().
+ */
+function tiles_container_theme($existing, $type, $theme, $path) {
+  return array(
+    'tiles_container_manage_children' => array(
+      'render element' => 'form',
+    ),
+    'tiles_container' => array(
+      'variables' => array('children' => NULL, 'display_type' => NULL, 'parent' => NULL),
+    ),
+  );
+}
+
+/**
+ * Menu access callback for add a block form.
+ */
+function tiles_container_menu_access($bean) {
+  return $bean->type == 'tiles_container' && bean_access('edit', $bean);
+}
+
+/**
+ * Implements hook_preprocess_tiles_container().
+ */
+function template_preprocess_tiles_container(&$variables) {
+  // $path = drupal_get_path('module', 'tiles_container');
+  // $bootstrap_path = drupal_get_path('theme', 'betterbase') . '/bootstrap';
+  // drupal_add_js($bootstrap_path . '/js/bootstrap-tab.js');
+  // drupal_add_css($path . '/tiles_container.css');
+}
+
+/**
+ * Theme a tiles container.
+ */
+function theme_tiles_container($variables) {
+  $children = $variables['children'];
+  $output = '';
+
+  // @todo: change this into theme_tiles_container_empty function.
+  if (empty($children)) {
+    if (user_access('edit any tiles_container bean')) {
+      $output .= t('This is an empty block container. You can add blocks to it by clicking <a href="!url">"Manage Children"</a> on the container cog menu', array(
+        '!url' => $variables['parent']->viewURL() . '/manage-children',
+      ));
+    }
+    return $output;
+  }
+
+  $nav = array();
+  $items = array();
+  foreach ($children as $key => $child) {
+    // Generate nav.
+    $nav[] = array(
+      'data' => $child->title,
+      'class' => array('nav-' . $key),
+    );
+
+    // Generate items.
+    $content = $child->view();
+    $content['#prefix'] = '<div class="' . drupal_clean_css_identifier($child->type) . '">';
+    $content['#suffix'] = '</div>';
+
+    $items[] = array(
+      'data' => drupal_render($content),
+      'class' => array('item-' . $key),
+    );
+  }
+
+  $output .= theme('item_list', array(
+    'items' => $nav,
+    'attributes' => array(
+      'class' => array('item-nav'),
+    ),
+  ));
+
+  $output .= theme('item_list', array(
+    'items' => $items,
+    'attributes' => array(
+      'class' => array('tiles-container-tabs'),
+    ),
+  ));
+
+  return $output;
+}
+
+/**
+ * Implements hook_entity_delete().
+ */
+function tiles_container_entity_delete($entity, $type) {
+  // Delete bean children when deleting container.
+  // @todo: should probably make this configurable.
+  if ($type == 'bean' && $entity->type == 'tiles_container') {
+    foreach ($entity->children as $child) {
+      if ($bean = bean_load($child)) {
+        bean_delete($bean);
+      }
+    }
+  }
+}
+
+/**
+ * API functions.
+ */
+
+/**
+ * Return the available bean types to include in a tiles container.
+ */
+function tiles_containers_get_types() {
+  $types = &drupal_static(__FUNCTION__, array());
+
+  if (empty($types)) {
+    $_types = bean_get_types();
+    foreach ($_types as $k => $v) {
+      $types[$k] = $v->getLabel();
+    }
+    drupal_alter('tiles_containers_types', $types);
+  }
+
+  return $types;
+}
