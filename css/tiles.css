@@ -122,8 +122,22 @@
 .contextual-links .bean-type > a:hover {
   background-color: transparent;
 }
-.dragging div[data-type='region'] {
+.dragging div[data-type='region']:not([class*='fixed']) {
+  position: relative;
   border: 2px dotted green;
+}
+.dragging div[data-type='region']:not([class*='fixed']):after {
+  top: 0;
+  right: 0;
+  background-color: green;
+  content: attr(data-name);
+  position: absolute;
+  color: #ffffff;
+  font-size: 80%;
+  font-weight: bold;
+  text-transform: uppercase;
+  text-align: right;
+  padding: 0 0.8em;
 }
 .resizing.tile {
   position: relative;

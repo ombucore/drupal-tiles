@@ -127,9 +127,22 @@
 }
 
 // hilights all regions during dragging
-// TODO: only the region of the dragging block should be hilighted
-.dragging div[data-type='region'] {
+.dragging div[data-type='region']:not([class*='fixed']) {
+  position: relative;
   border: 2px dotted green;
+  &:after {
+    top:0;
+    right:0;
+    background-color: green;
+    content: attr(data-name);
+    position: absolute;
+    color: hsl(0, 100%, 100%);
+    font-size: 80%;
+    font-weight: bold;
+    text-transform: uppercase;
+    text-align: right;
+    padding: 0 0.8em;
+  }
 }
 
 .resizing.tile {
