@@ -916,11 +916,32 @@ function _tiles_save_tiles() {
 
 /**
  * Get the available regions for adding new blocks to.
- *
- * @todo: this should be hookable.
  */
 function _tiles_get_regions() {
-  return system_region_list(variable_get('theme_default', NULL));
+  // @todo: this should be hookable.
+  $regions = system_region_list(variable_get('theme_default', NULL));
+
+  // If on a page with an active context, pull in block containers.
+  if (module_exists('tiles_container') && $context = _tiles_get_active_context()) {
+    $containers = array();
+    foreach ($context->reactions['tiles']['blocks'] as $block) {
+      if ($block['module'] == 'bean') {
+        $bean = bean_load_delta($block['delta']);
+        if ($bean->type == 'tiles_container') {
+          $containers[$bean->bid] = $bean->title;
+        }
+      }
+    }
+
+    if ($containers) {
+      $regions = array(
+        'regions' => $regions,
+        'containers' => $containers,
+      );
+    }
+  }
+
+  return $regions;
 }
 
 /**
@@ -941,6 +962,7 @@ function _tiles_js_init() {
           'active_context' => $context->name,
           'steps' => tiles_get_steps(),
           'stepsKeys' => array_keys(tiles_get_steps()),
+          'regions' => _tiles_get_regions(),
         ),
       ), 'setting');
     }
