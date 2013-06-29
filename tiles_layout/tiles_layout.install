@@ -1,0 +1,45 @@
+<?php
+
+/**
+ * @file
+ * Install hooks for tiles_layout module.
+ */
+
+/**
+ * Implements hook_schema().
+ */
+function tiles_layout_schema() {
+  $schema['tiles_layout'] = array(
+    'description' => 'Share layout entities for pages implementing tiles',
+    'fields' => array(
+      'id' => array(
+        'description' => 'The primary identifier for this layout entity.',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'label' => array(
+        'description' => 'The title/label of this layout.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'context' => array(
+        'description' => 'The {context}.name this layout implements.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+    ),
+    'foreign keys' => array(
+      'layout_context' => array(
+        'table' => 'context',
+        'columns' => array('context' => 'name'),
+      ),
+    ),
+    'primary key' => array('id'),
+  );
+  return $schema;
+}

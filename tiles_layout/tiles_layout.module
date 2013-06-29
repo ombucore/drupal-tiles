@@ -1,0 +1,84 @@
+<?php
+
+/**
+ * @file
+ * Layout entities that hold shared contexts for pages implementing tiles.
+ */
+
+/**
+ * Implements hook_entity_info().
+ */
+function tiles_layout_entity_info() {
+  return array(
+    'tiles_layout' => array(
+      'label' => t('Layout'),
+      'entity class' => 'TilesLayoutEntity',
+      'controller class' => 'EntityAPIController',
+      'base table' => 'tiles_layout',
+      'entity keys' => array(
+        'id' => 'id',
+        'label' => 'label',
+      ),
+      'fieldable' => FALSE,
+      // Make use the class' label() and uri() implementation by default.
+      'label callback' => 'entity_class_label',
+      'uri callback' => 'entity_class_uri',
+      'bundles' => array(
+        'tiles_layout' => array(
+          'label' => t('Layout'),
+        ),
+      ),
+      'access callback' => 'tiles_layout_access',
+      'admin ui' => array(
+        'path' => 'admin/structure/tiles-layout',
+        'file' => 'tiles_layout.admin.inc',
+      ),
+      'module' => 'tiles_layout',
+    ),
+  );
+}
+
+/**
+ * Implements hook_menu().
+ */
+function tiles_layout_menu() {
+  $items = array();
+
+  $items['admin/structure/tiles-layout/view/%entity_object'] = array(
+    'load arguments' => array('tiles_layout'),
+    'title' => 'Layout',
+    'page callback' => 'tiles_layout_view',
+    'page arguments' => array(4),
+    'access arguments' => array('administer tiles layout'),
+  );
+
+  return $items;
+}
+
+/**
+ * Implements hook_permission().
+ */
+function tiles_layout_permission() {
+  return array(
+    'administer tiles layout' => array(
+      'title' => t('Administer tiles layout'),
+      'description' => t('Create, edit and delete layout for shared tiles.'),
+    ),
+  );
+}
+
+/**
+ * Access callback for layout admin screen.
+ */
+function tiles_layout_access() {
+  return user_access('administer tiles layout');
+}
+
+/**
+ * View callback for layout entities.
+ */
+function tiles_layout_view($layout) {
+  drupal_set_title($layout->label());
+
+  return $layout->view();
+}

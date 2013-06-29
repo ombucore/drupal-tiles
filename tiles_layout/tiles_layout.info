@@ -1,0 +1,10 @@
+name = Tiles layout
+description = Provides common shared layout for pages implementing tiles
+version = 7.x-0.1
+core = 7.x
+package = 'Tiles'
+
+dependencies[] = tiles
+dependencies[] = entity
+
+files[] = includes/TilesLayoutEntity.php
