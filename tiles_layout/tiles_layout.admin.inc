@@ -11,7 +11,7 @@
 function tiles_layout_form($form, &$form_state, $layout, $op = 'edit') {
   if ($op == 'clone') {
     $layout->label .= ' (cloned)';
-    $layout->type .= '_clone';
+    $layout->type = 'clone';
   }
 
   $form['label'] = array(

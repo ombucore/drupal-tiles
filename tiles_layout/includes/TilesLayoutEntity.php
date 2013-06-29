@@ -28,7 +28,13 @@ class TilesLayoutEntity extends Entity {
     parent::save();
 
     if ($is_new) {
+      // @todo: clone context if this is a cloned entity (e.g. $this->type ==
+      // 'clone'
+      $this->context = $this->getContextName();
       $this->createContext();
+
+      // Save again so context gets properly associated.
+      parent::save();
     }
   }
 
