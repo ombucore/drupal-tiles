@@ -62,6 +62,16 @@ class TilesLayoutEntity extends Entity {
     $context->tag = 'tiles-layout';
     $context->description = '';
 
+    // Set the path as the only condition.
+    $path = $this->defaultUri();
+    $context->conditions = array(
+      'path' => array(
+        'values' => array(
+          $path['path'] => $path['path'],
+        ),
+      ),
+    );
+
     return context_save($context);
   }
 

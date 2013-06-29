@@ -61,8 +61,8 @@ function tiles_layout_menu() {
 function tiles_layout_permission() {
   return array(
     'administer tiles layout' => array(
-      'title' => t('Administer tiles layout'),
-      'description' => t('Create, edit and delete layout for shared tiles.'),
+      'title' => t('Administer tiles layouts'),
+      'description' => t('Create, edit and delete layouts for shared tiles.'),
     ),
   );
 }
