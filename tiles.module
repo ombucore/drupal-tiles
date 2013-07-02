@@ -289,13 +289,23 @@ function tiles_preprocess_block(&$variables) {
   }
 
   // Add weight to block.
-  if (tiles_is_tile($variables['block']->module, $variables['block']->delta)) {
+  $block = $variables['block'];
+  if (tiles_is_tile($block->module, $block->delta)) {
     $variables['classes_array'][] = 'tile';
 
     // Add data attributes to tiles to facilitate moving.
-    $variables['attributes_array']['data-module'] = $variables['block']->module;
-    $variables['attributes_array']['data-delta'] = $variables['block']->delta;
-    $variables['attributes_array']['data-width'] = $variables['block']->width;
+    $variables['attributes_array']['data-module'] = $block->module;
+    $variables['attributes_array']['data-delta'] = $block->delta;
+    $variables['attributes_array']['data-width'] = $block->width;
+
+    // Load bean type if block is a bean. Used in
+    // tiles_contextual_links_view_alter() to display the bean type in
+    // contextual links.
+    if ($block->module == 'bean') {
+      $types = bean_get_types();
+      $bean = bean_load_delta($block->delta);
+      $block->bean_type = $types[$bean->type]->getLabel();
+    }
   }
 }
 
@@ -355,18 +365,9 @@ function tiles_contextual_links_view_alter(&$element, $items) {
 
     // Add block type to links.
     if ($element['#element']['#block']->module == 'bean') {
-      $types = bean_get_types();
-
-      // Get bean to determine type.  This would be so much easier if blocks had
-      // some sort of context.
-      // @todo: figure out if this link can be disabled, or at least provide
-      // some default styling in the module.
-      $bean = isset($element['#element']['content']['bean']) ? $element['#element']['content']['bean'] : $element['#element']['bean'];
-      $bid = element_children($bean);
-      $label = $types[$bean[$bid[0]]['#entity']->type]->getLabel();
       $element['#links'] = array(
         'bean-type' => array(
-          'title' => $label,
+          'title' => $element['#element']['#block']->bean_type,
           'href' => current_path(),
         ),
       ) + $element['#links'];
