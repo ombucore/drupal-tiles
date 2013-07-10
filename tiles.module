@@ -237,6 +237,11 @@ function tiles_page_build(&$page) {
 function tiles_page_alter(&$page) {
   $max_cols_per_row = tiles_get_max_step();
   foreach (element_children($page) as $region_key) {
+    // Allow regions to bypass block wrapping.
+    if (in_array($region_key, variable_get('tiles_skip_regions', array()))) {
+      continue;
+    }
+
     // Make sure blocks are properly sorted.
     unset($page[$region_key]['#sorted']);
     $region_children = element_children($page[$region_key], TRUE);
