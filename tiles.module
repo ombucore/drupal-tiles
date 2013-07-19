@@ -232,56 +232,63 @@ function tiles_page_build(&$page) {
 /**
  * Implements hook_page_alter().
  *
- * Wraps blocks that belong to page regions in tile specific wrappers.
  */
 function tiles_page_alter(&$page) {
-  $max_cols_per_row = tiles_get_max_step();
   foreach (element_children($page) as $region_key) {
     // Allow regions to bypass block wrapping.
     if (in_array($region_key, variable_get('tiles_skip_regions', array()))) {
       continue;
     }
 
-    // Make sure blocks are properly sorted.
-    unset($page[$region_key]['#sorted']);
-    $region_children = element_children($page[$region_key], TRUE);
+    tiles_region_wrap($page[$region_key]);
+  }
+}
 
-    $col_count = $row = 0;
-    $row_key = 'row_' . $row;
+/**
+ * Wraps blocks that belong to page regions in tile specific wrappers.
+ */
+function tiles_region_wrap(&$region) {
+  $max_cols_per_row = tiles_get_max_step();
 
-    $page[$region_key]['#original'] = array();
-    $page[$region_key]['rows'] = array('#theme_wrappers' => array('tiles_region'));
-    $page[$region_key]['rows'][$row_key] = array('#theme_wrappers' => array('tiles_row'));
+  // Make sure blocks are properly sorted.
+  unset($region['#sorted']);
+  $region_children = element_children($region, TRUE);
 
-    foreach ($region_children as $delta) {
+  $col_count = $row = 0;
+  $row_key = 'row_' . $row;
 
-      // Only operate on blocks.
-      if (!array_key_exists('#block', $page[$region_key][$delta])) {
-        continue;
-      }
+  $region['#original'] = array();
+  $region['rows'] = array('#theme_wrappers' => array('tiles_region'));
+  $region['rows'][$row_key] = array('#theme_wrappers' => array('tiles_row'));
 
-      $block = $page[$region_key][$delta]['#block'];
-      $width = $block->width;
+  foreach ($region_children as $delta) {
 
-      if (($col_count + $width) <= $max_cols_per_row) {
-        $col_count += $width;
-      }
-      else {
-        $col_count = $width;
-        $row_key = 'row_' . ++$row;
-        $page[$region_key]['rows'][$row_key] = array('#theme_wrappers' => array('tiles_row'));
-      }
-
-      // Add block to current row.
-      $page[$region_key]['rows'][$row_key][$delta] = $page[$region_key][$delta];
-      $page[$region_key]['rows'][$row_key][$delta]['#theme_wrappers'][] = 'tiles_tile';
-
-      // Stash the block in the #original key.
-      $page[$region_key]['#original'][$delta] = $page[$region_key][$delta];
-
-      // Remove block from old position in region.
-      unset($page[$region_key][$delta]);
+    // Only operate on blocks.
+    if (!array_key_exists('#block', $region[$delta])) {
+      continue;
     }
+
+    $block = $region[$delta]['#block'];
+    $width = $block->width;
+
+    if (($col_count + $width) <= $max_cols_per_row) {
+      $col_count += $width;
+    }
+    else {
+      $col_count = $width;
+      $row_key = 'row_' . ++$row;
+      $region['rows'][$row_key] = array('#theme_wrappers' => array('tiles_row'));
+    }
+
+    // Add block to current row.
+    $region['rows'][$row_key][$delta] = $region[$delta];
+    $region['rows'][$row_key][$delta]['#theme_wrappers'][] = 'tiles_tile';
+
+    // Stash the block in the #original key.
+    $region['#original'][$delta] = $region[$delta];
+
+    // Remove block from old position in region.
+    unset($region[$delta]);
   }
 }
 
