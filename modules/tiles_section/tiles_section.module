@@ -1,0 +1,367 @@
+<?php
+
+/**
+ * @file
+ * Sectioned tiles field.
+ *
+ * Provides a field that can be attached to entities to provide a sortable
+ * list of sections to which tiles can be added. This creates a view on the
+ * entity (most likely a node) with navigation that behaves like a single scroll
+ * page.
+ */
+
+/**
+ * Implements hook_menu().
+ */
+function tiles_section_menu() {
+  $items = array();
+
+  // Menu item exists so contextual links will show up, but hidden by default
+  // since it's simply a page redirect to tiles edit screen.
+  $items['admin/structure/section'] = array(
+    'title' => 'Add block to section',
+    'page callback' => 'tiles_section_add_tile',
+    'access arguments' => array('arrange tiles'),
+    'hidden' => TRUE,
+  );
+  $items['admin/structure/section/%node/%'] = array(
+    'title' => 'Add block to section',
+    'page callback' => 'tiles_section_add_tile',
+    'page arguments' => array(3, 4),
+    'type' => MENU_LOCAL_ACTION,
+    'context' => MENU_CONTEXT_INLINE,
+    'access arguments' => array('arrange tiles'),
+  );
+
+  return $items;
+}
+
+/**
+ * Implements hook_theme().
+ */
+function tiles_section_theme($existing, $type, $theme, $path) {
+  return array(
+    'tiles_section' => array(
+      // Need to use element as the variable in order to attach contextual links
+      // properly, since contextual_preprocess() expects a #contextual_links key
+      // on the first variable in the calling theme.
+      'variables' => array('element' => NULL),
+      'template' => 'tiles-section',
+    ),
+  );
+}
+
+/**
+ * Implements hook_ctools_plugin_api().
+ */
+function tiles_section_ctools_plugin_api($module, $api) {
+  if ($module == 'context' && $api == 'plugins') {
+    return array('version' => 3);
+  }
+}
+
+/**
+ * Implements hook_context_plugins().
+ */
+function tiles_section_context_plugins() {
+  $plugins = array();
+  $plugins['tiles_section_context_condition_section'] = array(
+    'handler' => array(
+      'path' => drupal_get_path('module', 'tiles_section') . '/plugins',
+      'file' => 'tiles_section_context_condition_section.inc',
+      'class' => 'tiles_section_context_condition_section',
+      'parent' => 'context_condition',
+    ),
+  );
+  return $plugins;
+}
+
+/**
+ * Implements of hook_context_registry().
+ */
+function tiles_section_context_registry() {
+  $registry = array();
+
+  $registry['conditions'] = array(
+    'tiles_section' => array(
+      'title' => t('Section'),
+      'description' => 'This condition triggers for a specific section within a sectioned field.  Internal use only, should not be used otherwise.',
+      'plugin' => 'tiles_section_context_condition_section',
+    ),
+  );
+  return $registry;
+}
+
+/**
+ * Implements hook_field_widget_info_alter().
+ */
+function tiles_section_field_widget_info_alter(&$info) {
+  // Allow the textfield widget to be used for sections, since a section is
+  // simply a id/title as far as fields is concerned.
+  $info['text_textfield']['field types'][] = 'tiles_section';
+}
+
+/**
+ * Implements hook_field_info().
+ */
+function tiles_section_field_info() {
+  return array(
+    'tiles_section' => array(
+      'label' => t('Section'),
+      'description' => t('This field stores page sections in the database'),
+      'settings' => array('max_length' => 255),
+      'instance_settings' => array('text_processing' => NULL),
+      'default_widget' => 'text_textfield',
+      'default_formatter' => 'section_default',
+    ),
+  );
+}
+
+/**
+ * Implements hook_field_settings_form().
+ */
+function tiles_section_field_settings_form($field, $instance, $has_data) {
+  $settings = $field['settings'];
+
+  $form = array();
+
+  if ($field['type'] == 'tiles_section') {
+    $form['max_length'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Maximum length'),
+      '#default_value' => $settings['max_length'],
+      '#required' => TRUE,
+      '#description' => t('The maximum length of the field in characters.'),
+      '#element_validate' => array('element_validate_integer_positive'),
+      // @todo: If $has_data, add a validate handler that only allows
+      // max_length to increase.
+      '#disabled' => $has_data,
+    );
+  }
+
+  return $form;
+}
+
+/**
+ * Implements hook_field_widget_form_alter().
+ *
+ * Alter text format for section field to add id hidden field.
+ */
+function tiles_section_field_widget_form_alter(&$element, &$form_state, $context) {
+  if ($context['field']['type'] == 'tiles_section' && array_key_exists($context['delta'], $context['items'])) {
+    $item = $context['items'][$context['delta']];
+    $element['id'] = array(
+      '#type' => 'value',
+      '#value' => isset($item['id']) ? $item['id'] : NULL,
+    );
+  }
+}
+
+/**
+ * Implements hook_field_is_empty().
+ */
+function tiles_section_field_is_empty($item, $field) {
+  return !isset($item['value']) || $item['value'] === '';
+}
+
+/**
+ * Implements hook_field_validate().
+ *
+ * - 'text_value_max_length': The value exceeds the maximum length.
+ */
+function tiles_section_field_validate($entity_type, $entity, $field, $instance, $langcode, $items, &$errors) {
+  foreach ($items as $delta => $item) {
+    if (!empty($item['value'])) {
+      if (!empty($field['settings']['max_length']) && drupal_strlen($item['value']) > $field['settings']['max_length']) {
+        $message = t('%name: the text may not be longer than %max characters.', array('%name' => $instance['label'], '%max' => $field['settings']['max_length']));
+        $errors[$field['field_name']][$langcode][$delta][] = array(
+          'error' => "text_value_length",
+          'message' => $message,
+        );
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_field_presave().
+ */
+function tiles_section_field_presave($entity_type, $entity, $field, $instance, $langcode, &$items) {
+  if ($field['type'] == 'tiles_section') {
+    // Store unique ids for each section in order to store relevant information
+    // outside of the field definition (e.g. context and tiles). db_next_id() is
+    // used since the id column can't be a serial type.
+    foreach ($items as $key => $item) {
+      if (!isset($item['id'])) {
+        $items[$key]['id'] = db_next_id();
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_field_formatter_info().
+ */
+function tiles_section_field_formatter_info() {
+  return array(
+    'section_default' => array(
+      'label' => t('Default'),
+      'field types' => array('tiles_section'),
+    ),
+  );
+}
+
+/**
+ * Implements hook_field_formatter_view().
+ */
+function tiles_section_field_formatter_view($entity_type, $entity, $field, $instance, $langcode, $items, $display) {
+  $element = array();
+
+  switch ($display['type']) {
+    case 'section_default':
+      foreach ($items as $delta => $item) {
+        $element[$delta] = array(
+          '#theme' => 'tiles_section',
+          '#element' => array(
+            'node' => $entity,
+            'section' => $item['value'],
+            'id' => $item['id'],
+            '#contextual_links' => array(
+              'tiles_section' => array('admin/structure/section', array($entity->nid, $item['id'])),
+            ),
+          ),
+        );
+      }
+      break;
+  }
+
+  return $element;
+}
+
+/**
+ * Implements hook_field_attach_view_alter().
+ */
+function tiles_section_field_attach_view_alter(&$result, $context) {
+  // Add navigation to top of each section field.
+  foreach (element_children($result) as $field_name) {
+    if ($result[$field_name]['#field_type'] == 'tiles_section') {
+      foreach ($result[$field_name]['#items'] as $section) {
+        $clean_value = drupal_clean_css_identifier($section['value']);
+        $nav_items[] = l($section['value'], current_path(), array(
+          'fragment' => $clean_value,
+        ));
+      }
+
+      $result[$field_name . '-navigation'] = array(
+        '#theme' => 'item_list',
+        '#items' => $nav_items,
+        '#weight' => -100,
+        '#attributes' => array(
+          'id' => 'tiles-section-navigation',
+        ),
+      );
+    }
+  }
+}
+
+/**
+ * Theme callbacks.
+ */
+
+/**
+ * Preprocess function for tiles-section.tpl.php.
+ */
+function template_preprocess_tiles_section(&$variables) {
+  $element = $variables['element'];
+
+  $variables['section_title'] = $element['section'];
+  $variables['id'] = drupal_clean_css_identifier($element['section']);
+
+  $variables['context_id'] = '';
+
+  // Load up any blocks that have been added to this section through tiles. This
+  // uses an internal context condition and tiles reactions to load up blocks by
+  // mocking a page region render array.
+  if ($plugin = context_get_plugin('condition', 'tiles_section')) {
+    $contexts = $plugin->execute($element['node']->nid . '-' . $element['id']);
+
+    if ($contexts) {
+      // There can only be one active section context at a time.
+      $context = array_pop($contexts);
+      $variables['context_id'] = $context->name;
+
+      // Store currently active contexts.
+      $active_contexts = context_active_contexts();
+      context_clear();
+
+      // Temporarily set contexts to be active.
+      context_condition_met($context, $plugin->plugin);
+
+      // Trigger tiles reaction.
+      if ($plugin = context_get_plugin('reaction', 'tiles')) {
+        // Create a dummy 'page' render array with a single region 'content' so
+        // tiles reaction will place blocks within that region.
+        $build = array('content' => array());
+
+        drupal_static_reset('context_reaction_block_list');
+        $plugin->execute($build);
+
+        $tiles = $build['content'];
+
+        if ($tiles) {
+          // Get tiles width for each block.
+          foreach (element_children($tiles) as $block_key) {
+            // Only set the width of the block if it is not already set.
+            if (isset($tiles[$block_key]['#block'])) {
+              $block = $tiles[$block_key]['#block'];
+              $tiles[$block_key]['#block']->width = tiles_get_width($block->module, $block->delta, ($context ? $context->name : NULL));
+            }
+          }
+
+          // Let tiles wrap blocks.
+          tiles_region_wrap($build['content']);
+          $variables['tiles'] = $build['content'];
+        }
+      }
+
+      // Re-enable previously unset contexts.
+      foreach ($active_contexts as $context) {
+        context_set('context', $context->name, $context);
+      }
+    }
+  }
+}
+
+/**
+ * Page callback.
+ *
+ * Redirects user to appropriate tiles add block screen.
+ */
+function tiles_section_add_tile($node, $section) {
+  $namespace = 'tiles-section-' . $node->nid . '-' . $section;
+  if (!($context = context_load($namespace))) {
+    $context = new stdClass();
+    $context->name = $namespace;
+    $context->tag = 'tiles-section';
+    $context->description = '';
+
+    $context->conditions = array(
+      'tiles_section' => array(
+        'values' => array(
+          $node->nid . '-' . $section => $node->nid . '-' . $section,
+        ),
+      ),
+    );
+
+    context_save($context);
+  }
+
+  // Keep user in overlay.
+  $url = 'admin/tiles/add/' . $namespace;
+  if (module_exists('overlay') && overlay_get_mode() == 'child') {
+    overlay_close_dialog($_GET['destination'], array('fragment' => 'overlay=' . urlencode($url . '?destination=' . $_GET['destination'])));
+  }
+  else {
+    drupal_goto($url, array('query' => array('destination' => $_GET['destination'])));
+  }
+}

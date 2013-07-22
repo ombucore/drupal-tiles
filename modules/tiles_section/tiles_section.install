@@ -1,0 +1,28 @@
+<?php
+
+/**
+ * @file
+ * Install hooks for tiles_section.module
+ */
+
+/**
+ * Implements hook_field_schema().
+ */
+function tiles_section_field_schema($field) {
+  $columns = array(
+    'id' => array(
+      'type' => 'int',
+      'unsigned' => TRUE,
+      'not null' => FALSE,
+      'default' => NULL,
+    ),
+    'value' => array(
+      'type' => 'varchar',
+      'length' => $field['settings']['max_length'],
+      'not null' => FALSE,
+    ),
+  );
+  return array(
+    'columns' => $columns,
+  );
+}
