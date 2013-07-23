@@ -454,8 +454,19 @@ function tiles_block_view_alter(&$data, $block) {
  */
 function tiles_page_delivery_callback_alter(&$callback) {
   if (isset($_SERVER['HTTP_X_TILES']) && $_SERVER['HTTP_X_TILES']) {
-    $callback = 'tiles_page_deliver_tile_region';
+    if (($generator = tiles_get_generator($_SERVER['HTTP_X_TILES']))) {
+      $callback = 'tiles_handle_callback_request';
+    }
   }
+}
+
+/**
+ * Implements hook_tiles_generator().
+ */
+function tiles_tiles_generator() {
+  return array(
+    'region' => 'TilesRegionGenerator',
+  );
 }
 
 /**
@@ -813,6 +824,33 @@ function tiles_assign_tiles($context, $tiles) {
 }
 
 /**
+ * Returns the appropriate tiles generator given a type.
+ *
+ * @param string $type
+ *   The type of generator to return. Defaults to the 'region' type that is
+ *   implemented by this module.
+ *
+ * @param TilesGenerator $generator
+ *   The generator object.
+ */
+function tiles_get_generator($type = 'region') {
+  $generators = &drupal_static(__FUNCTION__, array());
+
+  if (empty($generators)) {
+    foreach (module_implements('tiles_generator') as $module) {
+      $generators = array_merge_recursive($generators, module_invoke($module, 'tiles_generator'));
+    }
+    drupal_alter('tiles_generator', $generators);
+  }
+
+  if (isset($generators[$type]) && class_exists($generators[$type])) {
+    return new $generators[$type];
+  }
+
+  return FALSE;
+}
+
+/**
  * Theme implementations.
  */
 
@@ -964,110 +1002,9 @@ function _tiles_js_init() {
 }
 
 /**
- * Delivery callback for Tiles reordering.
- *
- * @param $page_callback_result
- *   The result of a page callback. Can be one of:
- *   - NULL: to indicate no content.
- *   - An integer menu status constant: to indicate an error condition.
- *   - A string of HTML content.
- *   - A renderable array of content.
- *
- * @see drupal_deliver_html_page()
+ * Routes page callback request with X-TILES header to appropriate generator
+ * object.
  */
-function tiles_page_deliver_tile_region($page_callback_result) {
-  // Emit the correct charset HTTP header, but not if the page callback
-  // result is NULL, since that likely indicates that it printed something
-  // in which case, no further headers may be sent, and not if code running
-  // for this page request has already set the content type header.
-  if (isset($page_callback_result) && is_null(drupal_get_http_header('Content-Type'))) {
-    drupal_add_http_header('Content-Type', 'text/html; charset=utf-8');
-  }
-
-  // Menu status constants are integers; page content is a string or array.
-  if (is_int($page_callback_result)) {
-    // Let drupal_deliver_html_page() handle errors.  The calling code should
-    // check the response header.
-    return drupal_deliver_html_page($page_callback_result);
-  }
-  elseif (isset($page_callback_result)) {
-    // Print anything besides a menu constant, assuming it's not NULL or
-    // undefined.
-    print tiles_render_region($page_callback_result);
-  }
-
-  // Perform end-of-request tasks.
-  drupal_page_footer();
-}
-
-/**
- * Render the appropriate section for Tiles requests.
- *
- * @param $page
- *   The result of a page callback.  Should be a renderable array of content.
- */
-function tiles_render_region($page) {
-  $params = json_decode(file_get_contents('php://input'));
-
-  // Build up proper regions.
-  tiles_prerender_page($page);
-
-  // Focus on a specific region.
-  $region = $page[$params->region];
-
-  // Pull out old build array before blocks have been added to rows.
-  $region = $region['#original'];
-  foreach ($params->blocks as $block) {
-    $region[$block->module . '_' . $block->delta]['#weight'] = $block->weight;
-    $region[$block->module . '_' . $block->delta]['#block']->width = $block->width;
-  }
-
-  $page = array(
-    $params->region => $region,
-  );
-
-  // Rebuild blocks into tile rows.
-  tiles_page_alter($page);
-
-  print drupal_render($page);
-}
-
-/**
- * Prerenders a drupal page array.
- *
- * Copied from drupal_render_page(), executes everything up to the actual
- * rendering of the page array.
- *
- * @param $page
- *   A string or array representing the content of a page. The array consists of
- *   the following keys:
- *
- * @see drupal_render_page()
- */
-function tiles_prerender_page(&$page) {
-  $main_content_display = &drupal_static('system_main_content_added', FALSE);
-
-  // Allow menu callbacks to return strings or arbitrary arrays to render.
-  // If the array returned is not of #type page directly, we need to fill
-  // in the page with defaults.
-  if (is_string($page) || (is_array($page) && (!isset($page['#type']) || ($page['#type'] != 'page')))) {
-    drupal_set_page_content($page);
-    $page = element_info('page');
-  }
-
-  // Modules can add elements to $page as needed in hook_page_build().
-  foreach (module_implements('page_build') as $module) {
-    $function = $module . '_page_build';
-    $function($page);
-  }
-  // Modules alter the $page as needed. Blocks are populated into regions like
-  // 'sidebar_first', 'footer', etc.
-  drupal_alter('page', $page);
-
-  // If no module has taken care of the main content, add it to the page now.
-  // This allows the site to still be usable even if no modules that
-  // control page regions (for example, the Block module) are enabled.
-  if (!$main_content_display) {
-    $page['content']['system_main'] = drupal_set_page_content();
-  }
+function tiles_handle_callback_request($page_callback_result) {
+  return tiles_get_generator($_SERVER['HTTP_X_TILES'])->handleDelivery($page_callback_result);
 }

@@ -7,3 +7,5 @@ php = 5.1
 dependencies[] = context
 
 files[] = plugins/tiles_context_block_reaction.inc
+files[] = includes/TilesGenerator.php
+files[] = includes/TilesRegionGenerator.php

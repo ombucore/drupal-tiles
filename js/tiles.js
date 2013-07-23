@@ -38,6 +38,7 @@
     // Close the contextual links.
     this.domNode.closest('.contextual-links-region').mouseleave();
     this.region = this.domNode.closest(this.selector.region);
+    console.debug(this.region);
     this.module = this.domNode.attr('data-module');
     this.delta = this.domNode.attr('data-delta');
     this.width = parseInt(this.domNode.attr('data-width'), 10);;
@@ -45,8 +46,7 @@
 
   Tile.prototype.selector = {
     tile: '.tile',
-    region: '[data-type="region"]',
-    row: '.row-fluid',
+    region: '[data-type="region"],[data-type="section"]',
     moveLink: '.contextual-links .block-arrange a',
     resizeLink: '.contextual-links .block-set-width a'
   };
@@ -147,7 +147,8 @@
     var region = this.region.attr('data-name');
     var manifest = {
       region: region,
-      activeContext: Drupal.settings.tiles.active_context,
+      activeContext: this.region.attr('data-context') ? this.region.attr('data-context') : Drupal.settings.tiles.active_context,
+      type: this.region.attr('data-type'),
       blockIndex: {},
       blocks: []
     };
@@ -174,7 +175,7 @@
       data: JSON.stringify(manifest),
       dataType: 'html',
       beforeSend: function(xhr) {
-        xhr.setRequestHeader('X-TILES', 1);
+        xhr.setRequestHeader('X-TILES', manifest.type);
       },
       success: $.proxy(function(data, textStatus, jqXHR) {
         this.handleRequestRegionSuccess(data, textStatus, jqXHR);

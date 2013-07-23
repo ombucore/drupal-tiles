@@ -265,6 +265,15 @@ function tiles_section_field_attach_view_alter(&$result, $context) {
 }
 
 /**
+ * Implements hook_tiles_generator().
+ */
+function tiles_section_tiles_generator() {
+  return array(
+    'section' => 'TilesSectionGenerator',
+  );
+}
+
+/**
  * Theme callbacks.
  */
 
@@ -306,7 +315,7 @@ function template_preprocess_tiles_section(&$variables) {
         drupal_static_reset('context_reaction_block_list');
         $plugin->execute($build);
 
-        $tiles = $build['content'];
+        $tiles = &$build['content'];
 
         if ($tiles) {
           // Get tiles width for each block.

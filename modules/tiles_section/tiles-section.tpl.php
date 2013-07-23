@@ -11,10 +11,10 @@
  *
  */
 ?>
-<div class="<?php print $classes ?>" id="<?php print $id ?>" data-context="<?php print $context_id ?>">
+<div class="<?php print $classes ?>" id="<?php print $id ?>">
   <h2><?php print $section_title ?></h2>
   <?php print render($title_suffix) ?>
-  <div class="content" data-name="content" data-type="region">
+  <div class="content" data-name="content" data-type="section" data-context="<?php print $context_id ?>">
     <?php print render($tiles) ?>
   </div>
 </div>
