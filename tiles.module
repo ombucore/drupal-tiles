@@ -886,9 +886,8 @@ function _tiles_has_block_access() {
     return FALSE;
   }
 
-  // Tiles layout access. Run before admin path checking since layout paths are
-  // admin paths.
-  if ($layout = menu_get_object('entity_object', 4)) {
+  // Tiles layout access.
+  if ($layout = menu_get_object('entity_object', 1)) {
     return $layout instanceof TilesLayoutEntity && user_access('administer tiles layouts');
   }
 

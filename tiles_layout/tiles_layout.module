@@ -45,11 +45,11 @@ function tiles_layout_entity_info() {
 function tiles_layout_menu() {
   $items = array();
 
-  $items['admin/structure/tiles-layout/view/%entity_object'] = array(
+  $items['layout/%entity_object'] = array(
     'load arguments' => array('tiles_layout'),
     'title' => 'Layout',
     'page callback' => 'tiles_layout_view',
-    'page arguments' => array(4),
+    'page arguments' => array(1),
     'access arguments' => array('administer tiles layout'),
   );
 

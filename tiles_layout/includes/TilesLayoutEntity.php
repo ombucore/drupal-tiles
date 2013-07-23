@@ -14,7 +14,7 @@ class TilesLayoutEntity extends Entity {
    * Implements parent::defaultUri().
    */
   protected function defaultUri() {
-    return array('path' => 'admin/structure/tiles-layout/view/' . $this->identifier());
+    return array('path' => 'layout/' . $this->identifier());
   }
 
   /**
