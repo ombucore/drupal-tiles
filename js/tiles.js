@@ -114,7 +114,7 @@
     manifest.blocks[tile_index].weight = manifest.blocks[prev_tile_index].weight;
     manifest.blocks[prev_tile_index].weight = tile_weight;
     this.requestRegion(manifest, $.proxy(function() {
-      $("[data-module='" + this.module + "'][data-delta='" + this.delta + "'] " + this.selector.moveLink).click();
+      $("[data-module='" + this.module + "'][data-delta='" + this.delta + "'] " + this.selector.moveLink  + ':eq(0)').click();
     }, this));
     return false;
   };
@@ -133,7 +133,7 @@
     manifest.blocks[tile_index].weight = manifest.blocks[next_tile_index].weight;
     manifest.blocks[next_tile_index].weight = tile_weight;
     this.requestRegion(manifest, $.proxy(function() {
-      $("[data-module='" + this.module + "'][data-delta='" + this.delta + "'] " + this.selector.moveLink).click();
+      $("[data-module='" + this.module + "'][data-delta='" + this.delta + "'] " + this.selector.moveLink  + ':eq(0)').click();
     }, this));
     return false;
   };
@@ -151,18 +151,24 @@
       blockIndex: {},
       blocks: []
     };
+    var that = this;
+    var weight = 0;
     $(this.selector.tile, this.region).each(function(i) {
       var $t = $(this);
       var module = $t.attr('data-module');
       var delta = $t.attr('data-delta');
-      manifest.blockIndex[module + '-' + delta] = i;
+      if ($t.closest(that.selector.region)[0] !== that.region[0]) {
+        return;
+      }
+      manifest.blockIndex[module + '-' + delta] = weight;
       manifest.blocks.push({
         module: module,
         delta: delta,
         region: region,
         width: parseInt($t.attr('data-width'), 10),
-        weight: i
+        weight: weight
       });
+      weight++;
     });
     return manifest;
   };
@@ -269,7 +275,7 @@
     this.setInProgress();
     manifest.blocks[tile_index].width = new_width;
     this.requestRegion(manifest, $.proxy(function() {
-      $("[data-module='" + this.module + "'][data-delta='" + this.delta + "'] " + this.selector.resizeLink).click();
+      $("[data-module='" + this.module + "'][data-delta='" + this.delta + "'] " + this.selector.resizeLink + ':eq(0)').click();
     }, this));
 
     return false;
@@ -291,7 +297,7 @@
     this.setInProgress();
     manifest.blocks[tile_index].width = new_width;
     this.requestRegion(manifest, $.proxy(function() {
-      $("[data-module='" + this.module + "'][data-delta='" + this.delta + "'] " + this.selector.resizeLink).click();
+      $("[data-module='" + this.module + "'][data-delta='" + this.delta + "'] " + this.selector.resizeLink + ':eq(0)').click();
     }, this));
 
     return false;
