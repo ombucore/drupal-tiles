@@ -955,15 +955,8 @@ function _tiles_has_block_access() {
  * AJAX Callback: Save the weights and widths of blocks to the current page's context.
  */
 function _tiles_save_tiles() {
-  $params = json_decode(file_get_contents('php://input'));
-
-  if (!empty($params->activeContext)) {
-    $context = tiles_get_context('context', $params->activeContext);
-
-    $return = tiles_assign_tiles($context, $params->blocks);
-
-    return drupal_json_output($return);
-  }
+  // @todo: this should use the save method of the appropriate container object.
+  return tiles_get_container()->save();
 }
 
 /**

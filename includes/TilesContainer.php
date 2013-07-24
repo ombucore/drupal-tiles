@@ -50,6 +50,21 @@ class TilesContainer {
   }
 
   /**
+   * Saves a manifest to appropriate context.
+   */
+  public function save() {
+    $manifest = $this->getManifest();
+
+    if (!empty($manifest->activeContext)) {
+      $context = tiles_get_context('context', $manifest->activeContext);
+
+      $return = tiles_assign_tiles($context, $manifest->blocks);
+
+      return drupal_json_output($return);
+    }
+  }
+
+  /**
    * Render the appropriate section for Tiles requests.
    *
    * @param array $page
@@ -57,5 +72,15 @@ class TilesContainer {
    */
   protected function renderManifest($page) {
     print drupal_render($region);
+  }
+
+  /**
+   * Returns a manifest pushed by tiles.js.
+   *
+   * @return stdClass
+   *   Class representing manifest from frontend.
+   */
+  protected function getManifest() {
+    return json_decode(file_get_contents('php://input'));
   }
 }

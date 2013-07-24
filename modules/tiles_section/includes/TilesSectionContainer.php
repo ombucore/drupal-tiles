@@ -10,13 +10,13 @@ class TilesSectionContainer extends TilesContainer {
    * Implements parent::renderManifest().
    */
   protected function renderManifest($page) {
-    $params = json_decode(file_get_contents('php://input'));
+    $manifest = $this->getManifest();
 
     // Unset currently active conditions
     context_clear();
 
     // Temporarily set contexts to be active.
-    $context = context_load($params->activeContext);
+    $context = context_load($manifest->activeContext);
     context_condition_met($context, 'tiles_section');
 
     // Trigger tiles reaction.
@@ -32,7 +32,7 @@ class TilesSectionContainer extends TilesContainer {
 
       if ($tiles) {
         // Get tiles width for each block.
-        foreach ($params->blocks as $block) {
+        foreach ($manifest->blocks as $block) {
           $block_key = $block->module . '_' . $block->delta;
           $tiles[$block->module . '_' . $block->delta]['#weight'] = $block->weight;
           $tiles[$block->module . '_' . $block->delta]['#block']->width = $block->width;
