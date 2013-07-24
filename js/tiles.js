@@ -38,7 +38,6 @@
     // Close the contextual links.
     this.domNode.closest('.contextual-links-region').mouseleave();
     this.region = this.domNode.closest(this.selector.region);
-    console.debug(this.region);
     this.module = this.domNode.attr('data-module');
     this.delta = this.domNode.attr('data-delta');
     this.width = parseInt(this.domNode.attr('data-width'), 10);;

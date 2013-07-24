@@ -265,11 +265,11 @@ function tiles_section_field_attach_view_alter(&$result, $context) {
 }
 
 /**
- * Implements hook_tiles_generator().
+ * Implements hook_tiles_container_info().
  */
-function tiles_section_tiles_generator() {
+function tiles_section_tiles_container_info() {
   return array(
-    'section' => 'TilesSectionGenerator',
+    'section' => 'TilesSectionContainer',
   );
 }
 

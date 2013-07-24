@@ -454,18 +454,18 @@ function tiles_block_view_alter(&$data, $block) {
  */
 function tiles_page_delivery_callback_alter(&$callback) {
   if (isset($_SERVER['HTTP_X_TILES']) && $_SERVER['HTTP_X_TILES']) {
-    if (($generator = tiles_get_generator($_SERVER['HTTP_X_TILES']))) {
+    if (($container = tiles_get_container($_SERVER['HTTP_X_TILES']))) {
       $callback = 'tiles_handle_callback_request';
     }
   }
 }
 
 /**
- * Implements hook_tiles_generator().
+ * Implements hook_tiles_container_info().
  */
-function tiles_tiles_generator() {
+function tiles_tiles_container_info() {
   return array(
-    'region' => 'TilesRegionGenerator',
+    'region' => 'TilesRegionContainer',
   );
 }
 
@@ -824,27 +824,27 @@ function tiles_assign_tiles($context, $tiles) {
 }
 
 /**
- * Returns the appropriate tiles generator given a type.
+ * Returns the appropriate tiles container given a type.
  *
  * @param string $type
- *   The type of generator to return. Defaults to the 'region' type that is
+ *   The type of container to return. Defaults to the 'region' type that is
  *   implemented by this module.
  *
- * @param TilesGenerator $generator
- *   The generator object.
+ * @param TilesContainer $container
+ *   The container object.
  */
-function tiles_get_generator($type = 'region') {
-  $generators = &drupal_static(__FUNCTION__, array());
+function tiles_get_container($type = 'region') {
+  $containers = &drupal_static(__FUNCTION__, array());
 
-  if (empty($generators)) {
-    foreach (module_implements('tiles_generator') as $module) {
-      $generators = array_merge_recursive($generators, module_invoke($module, 'tiles_generator'));
+  if (empty($containers)) {
+    foreach (module_implements('tiles_container_info') as $module) {
+      $containers = array_merge_recursive($containers, module_invoke($module, 'tiles_container_info'));
     }
-    drupal_alter('tiles_generator', $generators);
+    drupal_alter('tiles_container_info', $containers);
   }
 
-  if (isset($generators[$type]) && class_exists($generators[$type])) {
-    return new $generators[$type];
+  if (isset($containers[$type]) && class_exists($containers[$type])) {
+    return new $containers[$type];
   }
 
   return FALSE;
@@ -1002,9 +1002,9 @@ function _tiles_js_init() {
 }
 
 /**
- * Routes page callback request with X-TILES header to appropriate generator
+ * Routes page callback request with X-TILES header to appropriate container
  * object.
  */
 function tiles_handle_callback_request($page_callback_result) {
-  return tiles_get_generator($_SERVER['HTTP_X_TILES'])->handleDelivery($page_callback_result);
+  return tiles_get_container($_SERVER['HTTP_X_TILES'])->handleDelivery($page_callback_result);
 }

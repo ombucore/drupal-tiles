@@ -5,11 +5,11 @@
  * Handles moving/sizing tiles within sections.
  */
 
-class TilesSectionGenerator extends TilesRegionGenerator {
+class TilesSectionContainer extends TilesContainer {
   /**
-   * Implements parent::renderRegion().
+   * Implements parent::renderManifest().
    */
-  protected function renderRegion($page) {
+  protected function renderManifest($page) {
     $params = json_decode(file_get_contents('php://input'));
 
     // Unset currently active conditions
