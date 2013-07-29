@@ -7,6 +7,17 @@
 
 class TilesSectionContainer extends TilesContainer {
   /**
+   * Implements parent::getRegions().
+   */
+  public function getRegions($context_name = '') {
+    // Sections are always stored in the content region.
+    // @todo return all sections appropriate to the node.
+    return array(
+      'content' => 'Content',
+    );
+  }
+
+  /**
    * Implements parent::renderManifest().
    */
   protected function renderManifest($page) {

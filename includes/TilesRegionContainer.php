@@ -7,6 +7,14 @@
 
 class TilesRegionContainer extends TilesContainer {
   /**
+   * Implements parent:getRegions().
+   */
+  public function getRegions($context_name = '') {
+    // @todo this should be hookable or configurable.
+    return system_region_list(variable_get('theme_default', NULL));
+  }
+
+  /**
    * Implements parent:renderManifest().
    */
   protected function renderManifest($page) {

@@ -7,8 +7,20 @@
 
 /**
  * Form for adding tiles to a context.
+ *
+ * @param $form
+ *   Nested array of form elements that comprise the form.
+ * @param $form_state
+ *   A keyed array containing the current state of the form.
+ * @param $type
+ *   The type of tiles container requesting the tiles add form. Defaults to the
+ *   tiles.module provided container of 'region'.
+ * @param $context_name
+ *   The name of the context in which to add tile to. If not present, a context
+ *   will be created (or loaded if already present) based on the destination
+ *   path.
  */
-function tiles_add_form($form, &$form_state, $context_name = '') {
+function tiles_add_form($form, &$form_state, $type = 'region', $context_name = '') {
   if (empty($form_state['next_step'])) {
     $form['context'] = array(
       '#type' => 'value',
@@ -28,14 +40,22 @@ function tiles_add_form($form, &$form_state, $context_name = '') {
       '#required' => TRUE,
     );
 
+    // Type can still come in as an empty string, so default parameter won't
+    // work.
+    $type = $type ? $type : 'region';
+    $regions = _tiles_get_regions($type, $context_name);
     $form['region'] = array(
       '#title' => t('Region'),
       '#type' => 'select',
-      '#options' => _tiles_get_regions(),
+      '#options' => $regions,
       '#description' => t('Choose a region for the block. Only regions where
       you can add blocks are listed.'),
       '#default_value' => 'content',
     );
+    // Hide regions if only one option.
+    if (count($regions) <= 1) {
+      $form['region']['#access'] = FALSE;
+    }
 
     $form['next'] = array(
       '#type' => 'submit',

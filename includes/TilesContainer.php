@@ -10,6 +10,21 @@
 
 class TilesContainer {
   /**
+   * Return a list of "regions" provided by this container.
+   *
+   * Regions in a tiles sense are just areas of content that a tile can be added
+   * to. This does include, but not limited to, Drupal regions.
+   *
+   * @param string $context_name
+   *   Context name of the specific context tiles are being added to.
+   *
+   * @return array
+   *   Array of regions appropriate for given context.
+   */
+  public function getRegions($context_name = '') {
+  }
+
+  /**
    * Handle page callback delivery from a Tiles request.
    *
    * Called by drupal_deliver_page when a request for a width/position change

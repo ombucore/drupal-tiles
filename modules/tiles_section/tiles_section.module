@@ -366,7 +366,7 @@ function tiles_section_add_tile($node, $section) {
   }
 
   // Keep user in overlay.
-  $url = 'admin/tiles/add/' . $namespace;
+  $url = 'admin/tiles/add/section/' . $namespace;
   if (module_exists('overlay') && overlay_get_mode() == 'child') {
     overlay_close_dialog($_GET['destination'], array('fragment' => 'overlay=' . urlencode($url . '?destination=' . $_GET['destination'])));
   }

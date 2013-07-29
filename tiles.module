@@ -49,7 +49,7 @@ function tiles_menu() {
   $items['admin/tiles/add'] = array(
     'title' => 'Add Block',
     'page callback' => 'drupal_get_form',
-    'page arguments' => array('tiles_add_form', 3),
+    'page arguments' => array('tiles_add_form', 3, 4),
     'access arguments' => array('add tiles'),
     'file' => 'tiles.admin.inc',
   );
@@ -962,10 +962,13 @@ function _tiles_save_tiles() {
 /**
  * Get the available regions for adding new blocks to.
  *
- * @todo: this should be hookable.
+ * @param string $type
+ *   The TilesContainer type from which to get regions.
+ * @param string $context_name
+ *   The context name to which tiles are being added.
  */
-function _tiles_get_regions() {
-  return system_region_list(variable_get('theme_default', NULL));
+function _tiles_get_regions($type = 'region', $context_name = '') {
+  return tiles_get_container($type)->getRegions($context_name);
 }
 
 /**
