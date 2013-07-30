@@ -99,7 +99,7 @@ function tiles_menu_local_tasks_alter(&$data, $router_item, $root_path) {
       '#theme' => 'menu_local_task',
       '#link' => array(
         'title' => t('Add Block'),
-        'href' => 'admin/tiles/add/' . ($context ? $context->name : ''),
+        'href' => 'admin/tiles/add/region/' . ($context ? $context->name : ''),
         'localized_options' => array(
           'query' => drupal_get_destination(),
           'attributes' => array(
