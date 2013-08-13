@@ -10,8 +10,18 @@ class TilesRegionContainer extends TilesContainer {
    * Implements parent:getRegions().
    */
   public function getRegions($context_name = '') {
-    // @todo this should be hookable or configurable.
-    return system_region_list(variable_get('theme_default', NULL));
+    $theme = variable_get('theme_default', NULL);
+
+    // Allow default theme to define which regions are available for tiles to be
+    // placed.
+    $tiles_regions = theme_get_setting('tiles_regions', $theme);
+
+    if (empty($tiles_regions)) {
+      // Default to all available regions.
+      $tiles_regions = system_region_list($theme);
+    }
+
+    return $tiles_regions;
   }
 
   /**
