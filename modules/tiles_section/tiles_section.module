@@ -249,6 +249,9 @@ function tiles_section_field_attach_view_alter(&$result, $context) {
         $clean_value = drupal_clean_css_identifier($section['value']);
         $nav_items[] = l($section['value'], current_path(), array(
           'fragment' => $clean_value,
+          'attributes' => array(
+            'title' => $section['value'],
+          ),
         ));
       }
 
