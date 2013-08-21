@@ -41,6 +41,9 @@ function tiles_section_menu() {
  */
 function tiles_section_theme($existing, $type, $theme, $path) {
   return array(
+    'tiles_section_navigation' => array(
+      'variables' => array('items' => NULL),
+    ),
     'tiles_section' => array(
       // Need to use element as the variable in order to attach contextual links
       // properly, since contextual_preprocess() expects a #contextual_links key
@@ -245,23 +248,10 @@ function tiles_section_field_attach_view_alter(&$result, $context) {
   // Add navigation to top of each section field.
   foreach (element_children($result) as $field_name) {
     if ($result[$field_name]['#field_type'] == 'tiles_section') {
-      foreach ($result[$field_name]['#items'] as $section) {
-        $clean_value = drupal_clean_css_identifier($section['value']);
-        $nav_items[] = l($section['value'], current_path(), array(
-          'fragment' => $clean_value,
-          'attributes' => array(
-            'title' => $section['value'],
-          ),
-        ));
-      }
-
       $result[$field_name . '-navigation'] = array(
-        '#theme' => 'item_list',
-        '#items' => $nav_items,
+        '#theme' => 'tiles_section_navigation',
+        '#items' => $result[$field_name]['#items'],
         '#weight' => -100,
-        '#attributes' => array(
-          'id' => 'tiles-section-navigation',
-        ),
       );
     }
   }
@@ -279,6 +269,28 @@ function tiles_section_tiles_container_info() {
 /**
  * Theme callbacks.
  */
+
+/**
+ * Theme callback for section navigation.
+ */
+function theme_tiles_section_navigation($variables) {
+  foreach ($variables['items'] as $section) {
+    $clean_value = drupal_clean_css_identifier($section['value']);
+    $nav_items[] = l($section['value'], current_path(), array(
+      'fragment' => $clean_value,
+      'attributes' => array(
+        'title' => $section['value'],
+      ),
+    ));
+  }
+
+  return theme('item_list', array(
+    'items' => $nav_items,
+    'attributes' => array(
+      'id' => 'tiles-section-navigation',
+    ),
+  ));
+}
 
 /**
  * Preprocess function for tiles-section.tpl.php.
