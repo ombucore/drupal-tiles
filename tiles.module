@@ -234,6 +234,13 @@ function tiles_page_build(&$page) {
  *
  */
 function tiles_page_alter(&$page) {
+  // Don't alter page if loading media modal window.
+  // @todo: need an abstract way of handling content where tiles shouldn't be
+  // active.
+  if (current_path() == 'media/browser') {
+    return;
+  }
+
   foreach (element_children($page) as $region_key) {
     // Allow regions to bypass block wrapping.
     if (in_array($region_key, variable_get('tiles_skip_regions', array()))) {
