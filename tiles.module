@@ -989,16 +989,18 @@ function _tiles_js_init() {
     drupal_add_css(drupal_get_path('module', 'tiles') . '/css/tiles.css');
     drupal_add_js(drupal_get_path('module', 'tiles') . '/js/tiles.js');
 
+    $settings = array(
+      'tiles' => array(
+        'steps' => tiles_get_steps(),
+        'stepsKeys' => array_keys(tiles_get_steps()),
+      ),
+    );
     $context = _tiles_get_active_context();
     if ($context) {
-      drupal_add_js(array(
-        'tiles' => array(
-          'active_context' => $context->name,
-          'steps' => tiles_get_steps(),
-          'stepsKeys' => array_keys(tiles_get_steps()),
-        ),
-      ), 'setting');
+      $settings['tiles']['active_context'] = $context->name;
     }
+
+    drupal_add_js($settings, 'setting');
 
     $initialized = TRUE;
   }
