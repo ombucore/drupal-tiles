@@ -624,6 +624,7 @@ function tiles_set_width($module, $delta, $width, $context_id) {
     }
   }
   else {
+      print "sad face :(\n";
     // Something went wrong with finding the bid.
     // @todo: should have proper error handling here.
   }

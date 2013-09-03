@@ -151,12 +151,28 @@ function tiles_section_field_settings_form($field, $instance, $has_data) {
  * Alter text format for section field to add id hidden field.
  */
 function tiles_section_field_widget_form_alter(&$element, &$form_state, $context) {
-  if ($context['field']['type'] == 'tiles_section' && array_key_exists($context['delta'], $context['items'])) {
-    $item = $context['items'][$context['delta']];
-    $element['id'] = array(
-      '#type' => 'value',
-      '#value' => isset($item['id']) ? $item['id'] : NULL,
+  if ($context['field']['type'] == 'tiles_section') {
+    if (array_key_exists($context['delta'], $context['items'])) {
+      $item = $context['items'][$context['delta']];
+      $element['id'] = array(
+        '#type' => 'value',
+        '#value' => isset($item['id']) ? $item['id'] : NULL,
+      );
+    }
+
+    $element['visible'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Title Visible?'),
+      '#description' => t('If unchecked, the title for this section will be hidden, only showing up in the navigation.'),
+      '#default_value' => isset($item['visible']) ? $item['visible'] : 1,
+      '#prefix' => '<div style="float:left; width: 49%;">',
+      '#suffix' => '</div>',
+      '#weight' => 100,
     );
+
+    $element['value']['#description'] = t('Title of section');
+    $element['value']['#prefix'] = '<div style="float:left; width: 49%;">';
+    $element['value']['#suffix'] = '</div>';
   }
 }
 
@@ -229,6 +245,7 @@ function tiles_section_field_formatter_view($entity_type, $entity, $field, $inst
             'node' => $entity,
             'section' => $item['value'],
             'id' => $item['id'],
+            'visible' => $item['visible'],
             '#contextual_links' => array(
               'tiles_section' => array('admin/structure/section', array($entity->nid, $item['id'])),
             ),
@@ -299,6 +316,7 @@ function template_preprocess_tiles_section(&$variables) {
   $element = $variables['element'];
 
   $variables['section_title'] = $element['section'];
+  $variables['title_visible'] = $element['visible'];
   $variables['id'] = drupal_clean_css_identifier($element['section']);
 
   $variables['context_id'] = '';
