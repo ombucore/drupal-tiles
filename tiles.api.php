@@ -32,3 +32,16 @@ function hook_tiles_info_alter(&$tiles) {
 function hook_tiles_regions(&$regions) {
   return array('content');
 }
+
+/**
+ * Hard-code widths for specific blocks. These widths are not changeable with
+ * the Tiles UI, so this hook should be used for blocks in the global context,
+ * or other contexts that content editors don't manage.
+ */
+function hook_tiles_widths() {
+  return array(
+    'modulename' => array (
+      'delta' => 8,
+    )
+  );
+}
