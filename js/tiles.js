@@ -246,12 +246,20 @@
     // load overwrites the whole dom.
     document.write = function() {};
 
-    var overlayContent = '<span class="width-current">' + Drupal.settings.tiles.steps[this.width] + '</span>';
+    var overlayContent = '<select class="width-menu">';
+    for (var i = 1; i <= Drupal.settings.tiles.stepsKeys.length; i++ ) {
+      var selected = (this.width == i) ? ' selected' : '';
+      overlayContent += '<option value="' + i + '"' + selected + '>' + Drupal.settings.tiles.steps[i] + '</option>';
+    }
+    overlayContent += '</select>';
     overlayContent += '<button class="width-minus">-</button>';
     overlayContent += '<button class="width-plus">+</button>';
+    overlayContent += '<div class="save-cancel-wrapper">';
     overlayContent += '<button class="save">Save</button>';
     overlayContent += '<span class="cancel">Cancel</span>';
+    overlayContent += '</div>';
     this.domNode.prepend('<div class="tile-overlay"><div class="inner"><div class="control-wrapper">' + overlayContent + '</div></div></div>');
+    $('select.width-menu', this.domNode).change($.proxy(this, 'widthSelect'));
     $('.width-plus', this.domNode).click($.proxy(this,'widthPlus'));
     $('.width-minus', this.domNode).click($.proxy(this,'widthMinus'));
     $('.cancel', this.domNode).click($.proxy(this, 'resizeCancel'));
@@ -301,6 +309,26 @@
     }, this));
 
     return false;
+  };
+  
+  Tile.prototype.widthSelect = function(e) {
+    var manifest = this.regionManifest();
+    var tile_index = manifest.blockIndex[this.module + '-' + this.delta];
+    var tile_width = this.width;
+    var steps = Drupal.settings.tiles.stepsKeys;
+    var step_index = $.inArray(tile_width, steps);
+    var new_width = $('select option:selected', this.domNode).val();
+
+    if (new_width === undefined) {
+      alert('undefined width'); // DO NOT LEAVE THIS AS-IS
+      return false;
+    }
+
+    this.setInProgress();
+    manifest.blocks[tile_index].width = new_width;
+    this.requestRegion(manifest, $.proxy(function() {
+      $("[data-module='" + this.module + "'][data-delta='" + this.delta + "'] " + this.selector.resizeLink + ':eq(0)').click();
+    }, this));
   };
 
   Tile.prototype.removeResizeOverlay = function() {

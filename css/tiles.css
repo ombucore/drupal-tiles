@@ -134,10 +134,11 @@
   position: absolute;
   border: 0;
   color: #FFFFFF;
-  font-size: 60px;
-  line-height: 60px;
+  font-size: 44px;
+  line-height: 50px;
   top: 50%;
-  margin-top: -30px;
+  margin-top: -50px;
+  padding: 0 12px;
   font-family: Arial, sans-serif;
   text-shadow: -1px 0 #000000, 0 1px #000000, 1px 0 #000000, 0 -1px #000000;
   -moz-text-shadow: -1px 0 #000000, 0 1px #000000, 1px 0 #000000, 0 -1px #000000;
@@ -148,28 +149,31 @@
   color: #56a4cd;
 }
 .resizing.tile .width-minus {
-  left: 12%;
+  left: 8px;
+  margin-top: -55px;
 }
 .resizing.tile .width-plus {
-  right: 12%;
+  right: 8px;
 }
-.resizing.tile .width-current {
-  margin: 0 auto 11px;
+.resizing.tile .width-menu {
+  margin: -40px auto 0;
   width: auto;
   display: block;
-  font-size: 18px;
-  color: #FFFFFF;
+  font-size: 14px;
   text-align: center;
-  text-shadow: -1px 0 #000000, 0 1px #000000, 1px 0 #000000, 0 -1px #000000;
-  -moz-text-shadow: -1px 0 #000000, 0 1px #000000, 1px 0 #000000, 0 -1px #000000;
-  -webkit-text-shadow: -1px 0 #000000, 0 1px #000000, 1px 0 #000000, 0 -1px #000000;
 }
-.resizing.tile .save {
-  margin: 11px auto 0;
+.resizing.tile .save-cancel-wrapper {
+  position: absolute;
+  bottom: 24px;
+  width: 100%;
+  text-align: center;
+}
+.resizing.tile .save-cancel-wrapper .save {
+  margin: 0 0 0 8px;
   width: 67px;
   padding: 5px 0;
   border: solid 1px #424242;
-  display: block;
+  display: inline-block;
   text-transform: uppercase;
   font-size: 12px;
   background: #f3f3f3;
@@ -183,27 +187,27 @@
   border-radius: 3px;
   background-clip: padding-box;
 }
-.resizing.tile .save:hover {
+.resizing.tile .save-cancel-wrapper .save:hover {
   background: #aaaaaa;
   background: -webkit-linear-gradient(#aaaaaa, #f3f3f3);
   background: -moz-linear-gradient(center top, #aaaaaa 0%, #f3f3f3 100%);
   background: linear-gradient(#aaaaaa, #f3f3f3);
 }
-.resizing.tile .cancel {
-  margin: 10px auto 0;
+.resizing.tile .save-cancel-wrapper .cancel {
+  margin: 0;
   width: 67px;
   text-align: center;
   text-transform: uppercase;
   color: white;
   text-decoration: underline;
-  display: block;
+  display: inline-block;
   font-size: 12px;
   cursor: pointer;
   -moz-transition: color 0.2s ease-in;
   -webkit-transition: color 0.2s ease-in;
   transition: color 0.2s ease-in;
 }
-.resizing.tile .cancel:hover {
+.resizing.tile .save-cancel-wrapper .cancel:hover {
   color: #f2f2f2;
 }
 .in-progress.tile .tile-overlay:after {
