@@ -153,16 +153,12 @@
 .resizing.tile .width-plus {
   right: 12%;
 }
-.resizing.tile .width-current {
-  margin: 0 auto 11px;
+.resizing.tile .width-menu {
+  margin: -20px auto 24px;
   width: auto;
   display: block;
-  font-size: 18px;
-  color: #FFFFFF;
+  font-size: 14px;
   text-align: center;
-  text-shadow: -1px 0 #000000, 0 1px #000000, 1px 0 #000000, 0 -1px #000000;
-  -moz-text-shadow: -1px 0 #000000, 0 1px #000000, 1px 0 #000000, 0 -1px #000000;
-  -webkit-text-shadow: -1px 0 #000000, 0 1px #000000, 1px 0 #000000, 0 -1px #000000;
 }
 .resizing.tile .save {
   margin: 11px auto 0;

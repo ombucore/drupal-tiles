@@ -246,7 +246,7 @@
     // load overwrites the whole dom.
     document.write = function() {};
 
-    var overlayContent = '<select class="width-current">';
+    var overlayContent = '<select class="width-menu">';
     for (var i = 1; i <= Drupal.settings.tiles.stepsKeys.length; i++ ) {
       var selected = (this.width == i) ? ' selected' : '';
       overlayContent += '<option value="' + i + '"' + selected + '>' + Drupal.settings.tiles.steps[i] + '</option>';
@@ -257,7 +257,7 @@
     overlayContent += '<button class="save">Save</button>';
     overlayContent += '<span class="cancel">Cancel</span>';
     this.domNode.prepend('<div class="tile-overlay"><div class="inner"><div class="control-wrapper">' + overlayContent + '</div></div></div>');
-    $('select.width-current', this.domNode).change($.proxy(this, 'widthSelect'));
+    $('select.width-menu', this.domNode).change($.proxy(this, 'widthSelect'));
     $('.width-plus', this.domNode).click($.proxy(this,'widthPlus'));
     $('.width-minus', this.domNode).click($.proxy(this,'widthMinus'));
     $('.cancel', this.domNode).click($.proxy(this, 'resizeCancel'));
