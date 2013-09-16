@@ -254,8 +254,10 @@
     overlayContent += '</select>';
     overlayContent += '<button class="width-minus">-</button>';
     overlayContent += '<button class="width-plus">+</button>';
+    overlayContent += '<div class="save-cancel-wrapper">';
     overlayContent += '<button class="save">Save</button>';
     overlayContent += '<span class="cancel">Cancel</span>';
+    overlayContent += '</div>';
     this.domNode.prepend('<div class="tile-overlay"><div class="inner"><div class="control-wrapper">' + overlayContent + '</div></div></div>');
     $('select.width-menu', this.domNode).change($.proxy(this, 'widthSelect'));
     $('.width-plus', this.domNode).click($.proxy(this,'widthPlus'));
