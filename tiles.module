@@ -383,7 +383,7 @@ function tiles_contextual_links_view_alter(&$element, $items) {
     }
 
     // Add block type to links.
-    if ($element['#element']['#block']->module == 'bean') {
+    if ($element['#element']['#block']->module == 'bean' && user_access('arrange tiles')) {
       $element['#links'] = array(
         'bean-type' => array(
           'title' => $element['#element']['#block']->bean_type,
