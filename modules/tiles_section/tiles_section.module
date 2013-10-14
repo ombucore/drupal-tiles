@@ -284,6 +284,25 @@ function tiles_section_tiles_container_info() {
 }
 
 /**
+ * Implements hook_entity_delete().
+ *
+ * Respond to bean deletions by removing block from tiles_section contexts.
+ */
+function tiles_section_entity_delete($entity, $type) {
+  if ($type == 'bean') {
+    $contexts = db_query("SELECT * FROM {context} WHERE tag = 'tiles-section'");
+    foreach ($contexts as $context) {
+      $reactions = unserialize($context->reactions);
+      if (isset($reactions['tiles']['blocks']['bean-' . $entity->delta])) {
+        $context = context_load($context->name);
+        unset($context->reactions['tiles']['blocks']['bean-' . $entity->delta]);
+        context_save($context);
+      }
+    }
+  }
+}
+
+/**
  * Theme callbacks.
  */
 
