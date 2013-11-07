@@ -238,16 +238,3 @@ function tiles_delete($module, $delta) {
 
   drupal_goto($_GET['destination']);
 }
-
-function tiles_delete_submit($form, &$form_state) {
-  $context = context_load($form['#context']);
-  if ($context) {
-    // Delete bean from context.
-    foreach($context->reactions['tiles']['blocks'] as $key => $value) {
-      if ($value['module'] == 'bean' && $value['delta'] == $form['#bean']->delta) {
-        unset($context->reactions['tiles']['blocks'][$key]);
-      }
-    }
-    context_save($context);
-  }
-}
