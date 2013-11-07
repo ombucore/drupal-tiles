@@ -375,15 +375,16 @@ function tiles_contextual_links_view_alter(&$element, $items) {
   // Remove configure block link for all blocks.
   // @todo: make this a setting?
   if (isset($element['#element']['#block'])) {
+    $block = $element['#element']['#block'];
     unset($element['#links']['block-configure']);
 
     // Remove the delete link for system main block.
-    if ($element['#element']['#block']->module == 'system' && $element['#element']['#block']->delta == 'main') {
+    if ($block->module == 'system' && $block->delta == 'main') {
       unset($element['#links']['block-delete']);
     }
 
     // Add block type to links.
-    if ($element['#element']['#block']->module == 'bean') {
+    if ($block->module == 'bean' && tiles_is_tile('bean', $block->delta)) {
       $element['#links'] = array(
         'bean-type' => array(
           'title' => $element['#element']['#block']->bean_type,
