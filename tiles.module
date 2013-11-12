@@ -75,10 +75,28 @@ function tiles_menu_alter(&$items) {
   $items['admin/structure/block/manage/%/%/delete']['context'] = MENU_CONTEXT_INLINE;
   $items['admin/structure/block/manage/%/%/delete']['page callback'] = 'tiles_delete';
   $items['admin/structure/block/manage/%/%/delete']['page arguments'] = array(4, 5);
-  $items['admin/structure/block/manage/%/%/delete']['access callback'] = 'tiles_is_tile';
-  $items['admin/structure/block/manage/%/%/delete']['access arguments'] = array(4, 5);
+  $items['admin/structure/block/manage/%/%/delete']['access callback'] = 'tiles_access';
+  $items['admin/structure/block/manage/%/%/delete']['access arguments'] = array('delete', 4, 5);
   $items['admin/structure/block/manage/%/%/delete']['file'] = 'tiles.admin.inc';
   $items['admin/structure/block/manage/%/%/delete']['module'] = 'tiles';
+}
+
+/**
+ * Permission callback for menus.
+ */
+function tiles_access($op, $module, $delta) {
+  // Default to just checking if a block is a tile.
+  $access = tiles_is_tile($module, $delta);
+
+  // Allow other modules to alter access.
+  $context = array(
+    'op' => $op,
+    'module' => $module,
+    'delta' => $delta,
+  );
+  drupal_alter('tiles_access', $access, $context);
+
+  return $access;
 }
 
 /**
@@ -375,15 +393,16 @@ function tiles_contextual_links_view_alter(&$element, $items) {
   // Remove configure block link for all blocks.
   // @todo: make this a setting?
   if (isset($element['#element']['#block'])) {
+    $block = $element['#element']['#block'];
     unset($element['#links']['block-configure']);
 
     // Remove the delete link for system main block.
-    if ($element['#element']['#block']->module == 'system' && $element['#element']['#block']->delta == 'main') {
+    if ($block->module == 'system' && $block->delta == 'main') {
       unset($element['#links']['block-delete']);
     }
 
     // Add block type to links.
-    if ($element['#element']['#block']->module == 'bean') {
+    if ($block->module == 'bean' && tiles_is_tile('bean', $block->delta)) {
       $element['#links'] = array(
         'bean-type' => array(
           'title' => $element['#element']['#block']->bean_type,
@@ -424,6 +443,19 @@ function tiles_form_bean_delete_confirm_alter(&$form, $form_state) {
   if (isset($_GET['destination'])) {
     $form['#context'] = 'tiles-' . _tiles_normalize_path($_GET['destination']);
     $form['#submit'][] = 'tiles_delete_submit';
+  }
+}
+
+function tiles_delete_submit($form, &$form_state) {
+  $context = context_load($form['#context']);
+  if ($context) {
+    // Delete bean from context.
+    foreach($context->reactions['tiles']['blocks'] as $key => $value) {
+      if ($value['module'] == 'bean' && $value['delta'] == $form['#bean']->delta) {
+        unset($context->reactions['tiles']['blocks'][$key]);
+      }
+    }
+    context_save($context);
   }
 }
 

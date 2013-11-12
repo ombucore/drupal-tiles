@@ -4,6 +4,8 @@ package = 'Tiles'
 core = 7.x
 php = 5.1
 
+verison = 7.x-0.2
+
 dependencies[] = context
 
 files[] = plugins/tiles_context_block_reaction.inc
