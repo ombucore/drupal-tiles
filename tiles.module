@@ -75,10 +75,28 @@ function tiles_menu_alter(&$items) {
   $items['admin/structure/block/manage/%/%/delete']['context'] = MENU_CONTEXT_INLINE;
   $items['admin/structure/block/manage/%/%/delete']['page callback'] = 'tiles_delete';
   $items['admin/structure/block/manage/%/%/delete']['page arguments'] = array(4, 5);
-  $items['admin/structure/block/manage/%/%/delete']['access callback'] = 'tiles_is_tile';
-  $items['admin/structure/block/manage/%/%/delete']['access arguments'] = array(4, 5);
+  $items['admin/structure/block/manage/%/%/delete']['access callback'] = 'tiles_access';
+  $items['admin/structure/block/manage/%/%/delete']['access arguments'] = array('delete', 4, 5);
   $items['admin/structure/block/manage/%/%/delete']['file'] = 'tiles.admin.inc';
   $items['admin/structure/block/manage/%/%/delete']['module'] = 'tiles';
+}
+
+/**
+ * Permission callback for menus.
+ */
+function tiles_access($op, $module, $delta) {
+  // Default to just checking if a block is a tile.
+  $access = tiles_is_tile($module, $delta);
+
+  // Allow other modules to alter access.
+  $context = array(
+    'op' => $op,
+    'module' => $module,
+    'delta' => $delta,
+  );
+  drupal_alter('tiles_access', $access, $context);
+
+  return $access;
 }
 
 /**
