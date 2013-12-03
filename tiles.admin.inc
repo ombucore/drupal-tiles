@@ -138,7 +138,6 @@ function tiles_add_form_add_validate($form, &$form_state) {
 }
 
 function tiles_add_form_add_submit($form, &$form_state) {
-  module_load_include('inc', 'bean', 'includes/bean.pages');
   $bean = $form_state['bean'];
   entity_form_submit_build_entity('bean', $bean, $form, $form_state);
 
@@ -170,12 +169,13 @@ function tiles_add_form_add_submit($form, &$form_state) {
 
   foreach (module_implements('bean_submit') as $module) {
     $function = $module . '_bean_submit';
-    $function($bean, $form, $form_state);
+    $function($bean, $form['bean_form'], $form_state);
   }
 
   $bean->setValues($form_state['values']);
-  field_attach_submit('bean', $bean, $form, $form_state);
+  field_attach_submit('bean', $bean, $form['bean_form'], $form_state);
   $bean->save();
+
   $watchdog_args = array('@type' => $bean->type, '%title' => $bean->label);
   $t_args = array('@type' => $bean->typeName(), '%title' => $bean->label);
 
