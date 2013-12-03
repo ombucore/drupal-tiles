@@ -248,7 +248,7 @@ function tiles_section_field_widget_form_alter(&$element, &$form_state, $context
     // Allow other modules to insert additional settings.
     drupal_alter('tiles_section_form', $element, $context);
 
-    $element['value']['#description'] = t('Title of section');
+    $element['value']['#description'] = t('Title of section. Delete the title in order to delete the section from this page.');
     $element['value']['#prefix'] = '<div style="float:left; width: 49%;">';
     $element['value']['#suffix'] = '</div>';
   }
