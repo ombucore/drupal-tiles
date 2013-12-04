@@ -176,7 +176,7 @@ function tiles_section_settings_property_set(&$data, $name, $value, $langcode, $
     $value = serialize($value);
   }
 
-  entity_property_verbatim_set($data, $name, $value, $langcode, $type, $info); 
+  entity_property_verbatim_set($data, $name, $value, $langcode, $type, $info);
 }
 
 /**
@@ -422,20 +422,26 @@ function tiles_section_get_context($nid, $section) {
 function theme_tiles_section_navigation($variables) {
   foreach ($variables['items'] as $section) {
     $clean_value = drupal_clean_css_identifier($section['value']);
-    $nav_items[] = l($section['value'], current_path(), array(
+    $nav_items[] = l('<span>' . $section['value'] . '</span>', current_path(), array(
+      'html' => true,
       'fragment' => $clean_value,
       'attributes' => array(
         'title' => $section['value'],
+        'data-target' => '#' . $clean_value,
       ),
     ));
   }
 
-  return theme('item_list', array(
+  $output = theme('item_list', array(
     'items' => $nav_items,
     'attributes' => array(
-      'id' => 'tiles-section-navigation',
+      'class' => array('nav', 'sections'),
     ),
   ));
+
+  $output = '<nav id="tiles-section-navigation">' . $output . '</nav>';
+
+  return $output;
 }
 
 /**
