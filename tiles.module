@@ -989,10 +989,14 @@ function _tiles_js_init() {
     drupal_add_css(drupal_get_path('module', 'tiles') . '/css/tiles.css');
     drupal_add_js(drupal_get_path('module', 'tiles') . '/js/tiles.js');
 
+    // @todo: need to get all available "regions" for the current page.
+    $regions = _tiles_get_regions();
+
     $settings = array(
       'tiles' => array(
         'steps' => tiles_get_steps(),
         'stepsKeys' => array_keys(tiles_get_steps()),
+        'regions' => $regions,
       ),
     );
     $context = _tiles_get_active_context();

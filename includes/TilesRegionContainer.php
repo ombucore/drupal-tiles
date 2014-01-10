@@ -28,7 +28,7 @@ class TilesRegionContainer extends TilesContainer {
    * Implements parent:renderManifest().
    */
   protected function renderManifest($page) {
-    $params = json_decode(file_get_contents('php://input'));
+    $params = $this->getManifest();
 
     // Build up proper regions.
     $this->prerenderPage($page);

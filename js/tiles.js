@@ -85,11 +85,18 @@
 
     var overlayContent = '<button class="move-left">Left</button>';
     overlayContent += '<button class="move-right">Right</button>';
+    overlayContent += '<select class="region" name="region">';
+    for (region_key in Drupal.settings.tiles.regions) {
+      var selected = (this.region.attr('data-name') == region_key) ? ' selected' : '';
+      overlayContent += '<option value="' + region_key + '"' + selected + '>' + Drupal.settings.tiles.regions[region_key] + '</option>';
+    }
+    overlayContent += '</select>';
     overlayContent += '<button class="save">Save</button>';
     overlayContent += '<span class="cancel">Cancel</span>';
     this.domNode.prepend('<div class="tile-overlay"><div class="inner"><div class="control-wrapper">' + overlayContent + '</div></div></div>');
     $('.move-left', this.domNode).click($.proxy(this,'moveLeft'));
     $('.move-right', this.domNode).click($.proxy(this,'moveRight'));
+    $('.region', this.domNode).change($.proxy(this, 'moveRegion'));
     $('.cancel', this.domNode).click($.proxy(this, 'moveCancel'));
     $('.save', this.domNode).click($.proxy(this, 'saveManifest'));
     return this;
@@ -138,6 +145,37 @@
     return false;
   };
 
+  Tile.prototype.moveRegion = function(e) {
+    var current_manifest = this.regionManifest();
+    var current_region = this.region;
+    var tile_index = current_manifest.blockIndex[this.module + '-' + this.delta];
+    delete current_manifest.blockIndex[this.module + '-' + this.delta];
+    delete current_manifest.blocks[tile_index];
+
+    var new_region = $('select option:selected', this.domNode).val();
+    this.region = $(this.selector.region).filter('[data-name=' + new_region + ']');
+
+    var manifest = this.regionManifest();
+    var block = manifest.blocks[manifest.length - 1];
+    if (!block) {
+      block = {
+        region: new_region,
+        weigth: -1,
+      };
+    }
+    block.module = this.module;
+    block.delta = this.delta;
+    block.width = this.width,
+    block.weight++;
+    manifest.blocks.push(block);
+
+    this.setInProgress();
+    this.requestRegion(current_manifest, $.proxy(function() {}, this), current_region);
+    this.requestRegion(manifest, $.proxy(function() {
+      $("[data-module='" + this.module + "'][data-delta='" + this.delta + "'] " + this.selector.moveLink + ':eq(0)').click();
+    }, this));
+  }
+
   Tile.prototype.moveCancel = function(e) {
     window.location.reload();
   };
@@ -173,7 +211,10 @@
     return manifest;
   };
 
-  Tile.prototype.requestRegion = function(manifest, callback) {
+  Tile.prototype.requestRegion = function(manifest, callback, region) {
+    if (!region) {
+      region = this.region;
+    }
     $.ajax({
       type: 'POST',
       url: window.location.toString(),
@@ -183,16 +224,16 @@
         xhr.setRequestHeader('X-TILES', manifest.type);
       },
       success: $.proxy(function(data, textStatus, jqXHR) {
-        this.handleRequestRegionSuccess(data, textStatus, jqXHR);
+        this.handleRequestRegionSuccess(region, data, textStatus, jqXHR);
         callback(data, textStatus, jqXHR);
       }, this),
       error: $.proxy(this, 'handleRequestRegionError')
     });
   };
 
-  Tile.prototype.handleRequestRegionSuccess = function(data, textStatus, jqXHR) {
-    this.region.html(data);
-    Drupal.attachBehaviors(this.region, Drupal.settings);
+  Tile.prototype.handleRequestRegionSuccess = function(region, data, textStatus, jqXHR) {
+    region.html(data);
+    Drupal.attachBehaviors(region, Drupal.settings);
   };
 
   Tile.prototype.handleRequestRegionError = function(jqXHR, textStatus, errorThrown) {
