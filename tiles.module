@@ -656,27 +656,39 @@ function tiles_is_tile($module, $delta) {
  */
 function tiles_set_width($module, $delta, $width, $context_id) {
   $bid = tiles_block_get_bid($module, $delta);
-  if ($bid) {
-    $check = db_query("SELECT bid FROM {tiles_width} WHERE context_id = :context_id AND bid = :bid", array(
-      ':context_id' => $context_id,
-      ':bid' => $bid,
-    ))->fetchField();
 
-    $values = array(
-      'context_id' => $context_id,
-      'bid' => $bid,
-      'width' => $width,
+  // If block ID wasn't found, that means that the block is being added before
+  // _block_rehash() has had a chance to rerun (or bean caches haven't been
+  // cleared). Since it's pretty safe to insert data into the blocks table,
+  // and all other important data will be updated on next cache clear, just
+  // insert necessary data to retrieve a bid.
+  if (!$bid) {
+    $block = array(
+      'module' => $module,
+      'delta' => $delta,
+      'theme' => variable_get('theme_default', ''),
+      'pages' => '',
+      'region' => BLOCK_REGION_NONE,
     );
-    if ($check) {
-      drupal_write_record('tiles_width', $values, array('context_id', 'bid'));
-    }
-    else {
-      drupal_write_record('tiles_width', $values);
-    }
+    drupal_write_record('block', $block);
+    $bid = $block['bid'];
+  }
+
+  $check = db_query("SELECT bid FROM {tiles_width} WHERE context_id = :context_id AND bid = :bid", array(
+    ':context_id' => $context_id,
+    ':bid' => $bid,
+  ))->fetchField();
+
+  $values = array(
+    'context_id' => $context_id,
+    'bid' => $bid,
+    'width' => $width,
+  );
+  if ($check) {
+    drupal_write_record('tiles_width', $values, array('context_id', 'bid'));
   }
   else {
-    // Something went wrong with finding the bid.
-    // @todo: should have proper error handling here.
+    drupal_write_record('tiles_width', $values);
   }
 }
 
