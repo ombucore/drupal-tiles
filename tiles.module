@@ -28,10 +28,10 @@ function tiles_menu() {
     'title' => 'Move',
     'type' => MENU_LOCAL_TASK,
     'context' => MENU_CONTEXT_INLINE,
-    'page callback' => '_tiles_move',
+    'page callback' => 'tiles_access',
     'page arguments' => array(4, 5),
     'access callback' => 'tiles_is_tile',
-    'access arguments' => array(4, 5),
+    'access arguments' => array('move', 4, 5),
     'weight' => -9,
   );
 
@@ -41,8 +41,8 @@ function tiles_menu() {
     'context' => MENU_CONTEXT_INLINE,
     'page callback' => '_tiles_width',
     'page arguments' => array(4, 5),
-    'access callback' => 'tiles_is_tile',
-    'access arguments' => array(4, 5),
+    'access callback' => 'tiles_access',
+    'access arguments' => array('resize', 4, 5),
     'weight' => -9,
   );
 
@@ -85,8 +85,9 @@ function tiles_menu_alter(&$items) {
  * Permission callback for menus.
  */
 function tiles_access($op, $module, $delta) {
-  // Default to just checking if a block is a tile.
-  $access = tiles_is_tile($module, $delta);
+  // Default to just checking if a block is a tile and if user has access to
+  // arrange tiles.
+  $access = user_access('arrange tiles') && tiles_is_tile($module, $delta);
 
   // Allow other modules to alter access.
   $context = array(
