@@ -600,6 +600,9 @@ function tiles_get_tile_types_options() {
         }
       }
     }
+
+    sort($tiles_options['bean types']);
+    sort($tiles_options['blocks']);
   }
 
   return $tiles_options;
