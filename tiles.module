@@ -28,9 +28,9 @@ function tiles_menu() {
     'title' => 'Move',
     'type' => MENU_LOCAL_TASK,
     'context' => MENU_CONTEXT_INLINE,
-    'page callback' => 'tiles_access',
+    'page callback' => '_tiles_move',
     'page arguments' => array(4, 5),
-    'access callback' => 'tiles_is_tile',
+    'access callback' => 'tiles_access',
     'access arguments' => array('move', 4, 5),
     'weight' => -9,
   );
