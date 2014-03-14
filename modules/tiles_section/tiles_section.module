@@ -48,7 +48,7 @@ function tiles_section_theme($existing, $type, $theme, $path) {
       // Need to use element as the variable in order to attach contextual links
       // properly, since contextual_preprocess() expects a #contextual_links key
       // on the first variable in the calling theme.
-      'variables' => array('element' => NULL),
+      'variables' => array('element' => NULL, 'tiles' => NULL),
       'template' => 'tiles-section',
     ),
   );
