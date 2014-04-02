@@ -192,11 +192,13 @@
 
   Tile.prototype.handleRequestRegionSuccess = function(data, textStatus, jqXHR) {
     this.region.html(data);
+    $(document).trigger('tiles.requestSuccess', this);
     Drupal.attachBehaviors(this.region, Drupal.settings);
   };
 
   Tile.prototype.handleRequestRegionError = function(jqXHR, textStatus, errorThrown) {
     this.unsetInProgress();
+    $(document).trigger('tiles.requestError', this);
     alert("There was an error changing this tile.");
   };
 
