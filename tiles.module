@@ -30,8 +30,8 @@ function tiles_menu() {
     'context' => MENU_CONTEXT_INLINE,
     'page callback' => '_tiles_move',
     'page arguments' => array(4, 5),
-    'access callback' => 'tiles_is_tile',
-    'access arguments' => array(4, 5),
+    'access callback' => 'tiles_access',
+    'access arguments' => array('move', 4, 5),
     'weight' => -9,
   );
 
@@ -41,8 +41,8 @@ function tiles_menu() {
     'context' => MENU_CONTEXT_INLINE,
     'page callback' => '_tiles_width',
     'page arguments' => array(4, 5),
-    'access callback' => 'tiles_is_tile',
-    'access arguments' => array(4, 5),
+    'access callback' => 'tiles_access',
+    'access arguments' => array('resize', 4, 5),
     'weight' => -9,
   );
 
@@ -75,10 +75,29 @@ function tiles_menu_alter(&$items) {
   $items['admin/structure/block/manage/%/%/delete']['context'] = MENU_CONTEXT_INLINE;
   $items['admin/structure/block/manage/%/%/delete']['page callback'] = 'tiles_delete';
   $items['admin/structure/block/manage/%/%/delete']['page arguments'] = array(4, 5);
-  $items['admin/structure/block/manage/%/%/delete']['access callback'] = 'tiles_is_tile';
-  $items['admin/structure/block/manage/%/%/delete']['access arguments'] = array(4, 5);
+  $items['admin/structure/block/manage/%/%/delete']['access callback'] = 'tiles_access';
+  $items['admin/structure/block/manage/%/%/delete']['access arguments'] = array('delete', 4, 5);
   $items['admin/structure/block/manage/%/%/delete']['file'] = 'tiles.admin.inc';
   $items['admin/structure/block/manage/%/%/delete']['module'] = 'tiles';
+}
+
+/**
+ * Permission callback for menus.
+ */
+function tiles_access($op, $module, $delta) {
+  // Default to just checking if a block is a tile and if user has access to
+  // arrange tiles.
+  $access = user_access('arrange tiles') && tiles_is_tile($module, $delta);
+
+  // Allow other modules to alter access.
+  $context = array(
+    'op' => $op,
+    'module' => $module,
+    'delta' => $delta,
+  );
+  drupal_alter('tiles_access', $access, $context);
+
+  return $access;
 }
 
 /**
@@ -123,7 +142,7 @@ function tiles_menu_local_tasks_alter(&$data, $router_item, $root_path) {
  * Implements hook_module_implements_alter().
  */
 function tiles_module_implements_alter(&$implementations, $hook) {
-  if ($hook == 'menu_alter') {
+  if (in_array($hook, array('page_alter', 'menu_alter'))) {
     $group = $implementations['tiles'];
     unset($implementations['tiles']);
     $implementations['tiles'] = $group;
@@ -375,15 +394,16 @@ function tiles_contextual_links_view_alter(&$element, $items) {
   // Remove configure block link for all blocks.
   // @todo: make this a setting?
   if (isset($element['#element']['#block'])) {
+    $block = $element['#element']['#block'];
     unset($element['#links']['block-configure']);
 
     // Remove the delete link for system main block.
-    if ($element['#element']['#block']->module == 'system' && $element['#element']['#block']->delta == 'main') {
+    if ($block->module == 'system' && $block->delta == 'main') {
       unset($element['#links']['block-delete']);
     }
 
     // Add block type to links.
-    if ($element['#element']['#block']->module == 'bean') {
+    if ($block->module == 'bean' && tiles_is_tile('bean', $block->delta) && user_access('arrange tiles')) {
       $element['#links'] = array(
         'bean-type' => array(
           'title' => $element['#element']['#block']->bean_type,
@@ -424,6 +444,19 @@ function tiles_form_bean_delete_confirm_alter(&$form, $form_state) {
   if (isset($_GET['destination'])) {
     $form['#context'] = 'tiles-' . _tiles_normalize_path($_GET['destination']);
     $form['#submit'][] = 'tiles_delete_submit';
+  }
+}
+
+function tiles_delete_submit($form, &$form_state) {
+  $context = context_load($form['#context']);
+  if ($context) {
+    // Delete bean from context.
+    foreach($context->reactions['tiles']['blocks'] as $key => $value) {
+      if ($value['module'] == 'bean' && $value['delta'] == $form['#bean']->delta) {
+        unset($context->reactions['tiles']['blocks'][$key]);
+      }
+    }
+    context_save($context);
   }
 }
 
@@ -474,6 +507,25 @@ function tiles_tiles_container_info() {
   return array(
     'region' => 'TilesRegionContainer',
   );
+}
+
+/**
+ * Implements hook_entity_delete().
+ *
+ * Respond to bean deletions by removing block from tiles contexts.
+ */
+function tiles_entity_delete($entity, $type) {
+  if ($type == 'bean') {
+    $contexts = db_query("SELECT * FROM {context} WHERE tag = 'tiles'");
+    foreach ($contexts as $context) {
+      $reactions = unserialize($context->reactions);
+      if (isset($reactions['tiles']['blocks']['bean-' . $entity->delta])) {
+        $context = context_load($context->name);
+        unset($context->reactions['tiles']['blocks']['bean-' . $entity->delta]);
+        context_save($context);
+      }
+    }
+  }
 }
 
 /**
@@ -548,6 +600,9 @@ function tiles_get_tile_types_options() {
         }
       }
     }
+
+    asort($tiles_options['bean types']);
+    asort($tiles_options['blocks']);
   }
 
   return $tiles_options;
@@ -605,27 +660,39 @@ function tiles_is_tile($module, $delta) {
  */
 function tiles_set_width($module, $delta, $width, $context_id) {
   $bid = tiles_block_get_bid($module, $delta);
-  if ($bid) {
-    $check = db_query("SELECT bid FROM {tiles_width} WHERE context_id = :context_id AND bid = :bid", array(
-      ':context_id' => $context_id,
-      ':bid' => $bid,
-    ))->fetchField();
 
-    $values = array(
-      'context_id' => $context_id,
-      'bid' => $bid,
-      'width' => $width,
+  // If block ID wasn't found, that means that the block is being added before
+  // _block_rehash() has had a chance to rerun (or bean caches haven't been
+  // cleared). Since it's pretty safe to insert data into the blocks table,
+  // and all other important data will be updated on next cache clear, just
+  // insert necessary data to retrieve a bid.
+  if (!$bid) {
+    $block = array(
+      'module' => $module,
+      'delta' => $delta,
+      'theme' => variable_get('theme_default', ''),
+      'pages' => '',
+      'region' => BLOCK_REGION_NONE,
     );
-    if ($check) {
-      drupal_write_record('tiles_width', $values, array('context_id', 'bid'));
-    }
-    else {
-      drupal_write_record('tiles_width', $values);
-    }
+    drupal_write_record('block', $block);
+    $bid = $block['bid'];
+  }
+
+  $check = db_query("SELECT bid FROM {tiles_width} WHERE context_id = :context_id AND bid = :bid", array(
+    ':context_id' => $context_id,
+    ':bid' => $bid,
+  ))->fetchField();
+
+  $values = array(
+    'context_id' => $context_id,
+    'bid' => $bid,
+    'width' => $width,
+  );
+  if ($check) {
+    drupal_write_record('tiles_width', $values, array('context_id', 'bid'));
   }
   else {
-    // Something went wrong with finding the bid.
-    // @todo: should have proper error handling here.
+    drupal_write_record('tiles_width', $values);
   }
 }
 

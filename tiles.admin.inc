@@ -138,44 +138,35 @@ function tiles_add_form_add_validate($form, &$form_state) {
 }
 
 function tiles_add_form_add_submit($form, &$form_state) {
-  module_load_include('inc', 'bean', 'includes/bean.pages');
   $bean = $form_state['bean'];
   entity_form_submit_build_entity('bean', $bean, $form, $form_state);
 
-  // Transform temporary delta key into a readable key.
-  if ($bean->label == 'ombucleanup-tempkey') {
-    if ($bean->title) {
-      $bean->label = $bean->title;
-    }
-    else {
-      $bean->label = $bean->type;
-    }
-  }
+  // Default to use title as label, otherwise use bean type.
+  $bean->label = $bean->title ? $bean->title : $bean->type;
 
-  $max_length = 32;
-  // Base it on the label and make sure it isn't too long for the database
+  // Create a truly unique delta for new beans. Bean::add() has the
+  // possibility of generating deltas that existed in beans that have been
+  // previously deleted. This causes problems, especially when a bean has
+  // been deleted but not removed from other systems (e.g. context), causing
+  // the bean to show up in unintended places.
   $bean->delta = drupal_clean_css_identifier(strtolower($bean->label));
-  $bean->delta = substr($bean->delta, 0, $max_length);
 
-  // Check if delta is unique
-  if (bean_load_delta($bean->delta)) {
-    $i = 0;
-    $separator = '-';
-    $original_delta = $bean->delta;
-    do {
-      $unique_suffix = $separator . $i++;
-      $bean->delta = substr($original_delta, 0, $max_length - drupal_strlen($unique_suffix)) . $unique_suffix;
-    } while (bean_load_delta($bean->delta));
-  }
+  // Make sure it isn't too long for the database.
+  $max_length = 32;
+  $identifier = '-' . db_next_id();
+  $max_length -= strlen($identifier);
+  $bean->delta = substr($bean->delta, 0, $max_length);
+  $bean->delta .= $identifier;
 
   foreach (module_implements('bean_submit') as $module) {
     $function = $module . '_bean_submit';
-    $function($bean, $form, $form_state);
+    $function($bean, $form['bean_form'], $form_state);
   }
 
   $bean->setValues($form_state['values']);
-  field_attach_submit('bean', $bean, $form, $form_state);
+  field_attach_submit('bean', $bean, $form['bean_form'], $form_state);
   $bean->save();
+
   $watchdog_args = array('@type' => $bean->type, '%title' => $bean->label);
   $t_args = array('@type' => $bean->typeName(), '%title' => $bean->label);
 
@@ -237,17 +228,4 @@ function tiles_delete($module, $delta) {
   }
 
   drupal_goto($_GET['destination']);
-}
-
-function tiles_delete_submit($form, &$form_state) {
-  $context = context_load($form['#context']);
-  if ($context) {
-    // Delete bean from context.
-    foreach($context->reactions['tiles']['blocks'] as $key => $value) {
-      if ($value['module'] == 'bean' && $value['delta'] == $form['#bean']->delta) {
-        unset($context->reactions['tiles']['blocks'][$key]);
-      }
-    }
-    context_save($context);
-  }
 }
