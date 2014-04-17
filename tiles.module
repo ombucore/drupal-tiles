@@ -458,6 +458,9 @@ function tiles_delete_submit($form, &$form_state) {
     }
     context_save($context);
   }
+
+  // Clear block and page cache.
+  cache_clear_all();
 }
 
 /**
@@ -510,23 +513,32 @@ function tiles_tiles_container_info() {
 }
 
 /**
- * Implements hook_entity_delete().
+ * Implements hook_bean_delete().
  *
  * Respond to bean deletions by removing block from tiles contexts.
  */
-function tiles_entity_delete($entity, $type) {
-  if ($type == 'bean') {
-    $contexts = db_query("SELECT * FROM {context} WHERE tag = 'tiles'");
-    foreach ($contexts as $context) {
-      $reactions = unserialize($context->reactions);
-      if (isset($reactions['tiles']['blocks']['bean-' . $entity->delta])) {
-        $context = context_load($context->name);
-        unset($context->reactions['tiles']['blocks']['bean-' . $entity->delta]);
-        context_save($context);
-      }
+function tiles_bean_delete($bean) {
+  $contexts = db_query("SELECT * FROM {context} WHERE tag = 'tiles'");
+  foreach ($contexts as $context) {
+    $reactions = unserialize($context->reactions);
+    if (isset($reactions['tiles']['blocks']['bean-' . $bean->delta])) {
+      $context = context_load($context->name);
+      unset($context->reactions['tiles']['blocks']['bean-' . $bean->delta]);
+      context_save($context);
     }
   }
 }
+
+/**
+ * Implements hook_bean_cache_clear().
+ *
+ * Clear all caches when bean cache is cleared, in order for new bean content to
+ * show on cached pages.
+ */
+function tiles_bean_cache_clear() {
+  cache_clear_all();
+}
+
 
 /**
  * Public API functions
@@ -894,7 +906,12 @@ function tiles_assign_tiles($context, $tiles) {
     }
   }
 
-  return context_save($context);
+  $return = context_save($context);
+
+  // Clear block and page cache.
+  cache_clear_all();
+
+  return $return;
 }
 
 /**
