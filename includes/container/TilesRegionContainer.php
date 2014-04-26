@@ -9,7 +9,7 @@ class TilesRegionContainer extends TilesContainer {
   /**
    * Implements parent:getRegions().
    */
-  public function getRegions($context_name = '') {
+  public function getRegions() {
     $theme = variable_get('theme_default', NULL);
 
     // Allow default theme to define which regions are available for tiles to be
@@ -44,7 +44,7 @@ class TilesRegionContainer extends TilesContainer {
     }
 
     // Rebuild blocks into tile rows.
-    tiles_region_wrap($region);
+    $this->wrapRegion($region);
 
     print drupal_render($region);
   }
@@ -88,4 +88,6 @@ class TilesRegionContainer extends TilesContainer {
       $page['content']['system_main'] = drupal_set_page_content();
     }
   }
+
+  /**
 }

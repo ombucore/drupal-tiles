@@ -9,18 +9,71 @@
  * Implements hook_schema().
  */
 function tiles_schema() {
-  $schema['tiles_width'] = array(
-    'description' => 'Stores widths of tiles',
+  $schema['tile_layout'] = array(
+    'description' => 'The base table for tile layouts',
     'fields' => array(
-      'context_id' => array(
-        'description' => 'The primary identifier for a context.',
+      'tid' => array(
+        'description' => 'The primary identifier for a tile layout.',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'container' => array(
+        'description' => 'The type of container this tile layout belongs to',
         'type' => 'varchar',
-        'length' => 255,
+        'length' => 64,
         'not null' => TRUE,
         'default' => '',
       ),
-      'bid' => array(
-        'description' => 'The {block}.bid to store the width for.',
+      'selector' => array(
+        'description' => 'Selector used by container to determine placement (e.g. path for region containers)',
+        'type' => 'varchar',
+        'length' => 255,
+      ),
+    ),
+    'primary key' => array('nid'),
+  );
+
+  $schema['tile_layout_blocks'] = array(
+    'description' => 'Stores blocks associated with a tile layout',
+    'fields' => array(
+      'tid' => array(
+        'description' => 'The primary identifier for a tile layout.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'module' => array(
+        'type' => 'varchar',
+        'length' => 64,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => "The module from which the block originates; for example, 'user' for the Who's Online block, and 'block' for any custom blocks.",
+      ),
+      'delta' => array(
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => TRUE,
+        'default' => '0',
+        'description' => 'Unique ID for block within a module.',
+      ),
+      'region' => array(
+        'type' => 'varchar',
+        'length' => 64,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'Theme region within which the block is set.',
+      ),
+      'breakpoint' => array(
+        'type' => 'varchar',
+        'length' => 64,
+        'not null' => TRUE,
+        'default' => 'default',
+        'description' => 'Breakpoint at which width and weight apply for this block.',
+      ),
+      'weight' => array(
+        'description' => 'The weight of block.',
         'type' => 'int',
         'unsigned' => TRUE,
         'not null' => TRUE,
@@ -33,17 +86,13 @@ function tiles_schema() {
       ),
     ),
     'foreign keys' => array(
-      'context_id' => array(
-        'table' => 'context',
-        'columns' => array('context_id' => 'name'),
-      ),
-      'bid' => array(
-        'table' => 'block',
-        'columns' => array('bid' => 'bid'),
+      'tid' => array(
+        'table' => 'tile',
+        'columns' => array('tid' => 'tid'),
       ),
     ),
     'unique keys' => array(
-      'context_id_bid' => array('context_id', 'bid'),
+      'tid_module_delta_breakpoint' => array('tid', 'module', 'delta', 'breakpoint'),
     ),
   );
   return $schema;
