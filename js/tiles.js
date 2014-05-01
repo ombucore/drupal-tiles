@@ -146,7 +146,7 @@
     var region = this.region.attr('data-name');
     var manifest = {
       region: region,
-      activeContext: this.region.attr('data-context') ? this.region.attr('data-context') : Drupal.settings.tiles.active_context,
+      selector: this.region.attr('data-selector') ? this.region.attr('data-selector') : Drupal.settings.tiles.selector,
       type: this.region.attr('data-type'),
       blockIndex: {},
       blocks: []
@@ -209,6 +209,9 @@
       url: '/admin/tiles-save-tiles',
       data: JSON.stringify(manifest),
       dataType: 'json',
+      beforeSend: function(xhr) {
+        xhr.setRequestHeader('X-TILES', manifest.type);
+      },
       success: $.proxy(this.saveHandleSuccess, this),
       error: $.proxy(this.saveHandleError, this)
     });

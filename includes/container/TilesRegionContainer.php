@@ -88,6 +88,4 @@ class TilesRegionContainer extends TilesContainer {
       $page['content']['system_main'] = drupal_set_page_content();
     }
   }
-
-  /**
 }

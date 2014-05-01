@@ -33,9 +33,11 @@ abstract class TilesContainer {
       return array_shift($layouts);
     }
     else {
-      $layout = entity_create('tile_layout');
-      $layout->selector = $selector;
-      $layout->container = $this->container;
+      $layout = entity_create('tile_layout', array(
+        'selector' => $selector,
+        'container' => $this->container,
+      ));
+      return $layout;
     }
   }
 
@@ -52,22 +54,24 @@ abstract class TilesContainer {
   }
 
   /**
-   * Render blocks from a layout into regions.
+   * Place blocks from a layout into regions.
    *
    * @param array $page
    *   Page render array.
+   * @param TileLayout $layout
+   *   The tile layout holding block references.
    */
-  public function renderPage(&$page) {
+  public function buildPage(&$page, $layout) {
     // Load all region content assigned via blocks.
     $regions = $this->getRegions();
     foreach (array_keys($regions) as $region) {
-      if ($blocks = $this->block_get_blocks_by_region($region)) {
+      if ($blocks = $layout->getRenderBlocks($region)) {
 
         // Are the blocks already sorted.
         $blocks_sorted = TRUE;
 
         // If blocks have already been placed in this region (most likely by
-        // Block module), then merge in blocks from Context.
+        // Block module), then merge in blocks from layout.
         if (isset($page[$region])) {
           $page[$region] = array_merge($page[$region], $blocks);
 
@@ -135,12 +139,18 @@ abstract class TilesContainer {
   public function save() {
     $manifest = $this->getManifest();
 
-    if (!empty($manifest->activeContext)) {
-      $context = tiles_get_context('context', $manifest->activeContext);
+    if (!empty($manifest->selector)) {
+      $layout = $this->getLayout($manifest->selector);
 
-      $return = tiles_assign_tiles($context, $manifest->blocks);
+      // Clear out any current blocks in passed region.
+      $layout->clearBlocks($manifest->region);
 
-      return drupal_json_output($return);
+      // Add blocks back to layout.
+      foreach ($manifest->blocks as $block) {
+        $layout->addBlock($block);
+      }
+
+      return $layout->save();
     }
   }
 
@@ -208,7 +218,7 @@ abstract class TilesContainer {
   /**
    * Returns a manifest pushed by tiles.js.
    *
-   * @return stdClass
+   * @return Object
    *   Class representing manifest from frontend.
    */
   protected function getManifest() {

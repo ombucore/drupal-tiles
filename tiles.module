@@ -24,17 +24,15 @@ define('TILES_WIDTH_STEPS', 12);
  * Implements hook_entity_info().
  */
 function tiles_entity_info() {
-  $return = array(
-    'tile' => array(
-      'label' => t('Tile'),
-      'entity class' => 'Tile',
-      'controller class' => 'TileController',
-      'base table' => 'tile',
-      // 'revision table' => 'node_revision',
+  return array(
+    'tile_layout' => array(
+      'label' => t('Tile layout'),
+      'entity class' => 'TileLayout',
+      'controller class' => 'TileLayoutController',
+      'base table' => 'tile_layout',
       'fieldable' => FALSE,
       'entity keys' => array(
         'id' => 'tid',
-        // 'revision' => 'vid',
       ),
     ),
   );
@@ -133,12 +131,11 @@ function tiles_menu_local_tasks_alter(&$data, $router_item, $root_path) {
       );
     }
 
-    $context = _tiles_get_active_context();
     $data['tabs'][0]['output'][] = array(
       '#theme' => 'menu_local_task',
       '#link' => array(
         'title' => t('Add Block'),
-        'href' => 'admin/tiles/add/region/' . ($context ? $context->name : ''),
+        'href' => 'admin/tiles/add/region',
         'localized_options' => array(
           'query' => drupal_get_destination(),
           'attributes' => array(
@@ -147,7 +144,6 @@ function tiles_menu_local_tasks_alter(&$data, $router_item, $root_path) {
         ),
       ),
     );
-    $data['tabs'][0]['count']++;
 
     // Make sure the Add Block link shows up even for pages that don't have
     // local tasks.
@@ -208,16 +204,18 @@ function tiles_theme() {
  */
 function tiles_page_build(&$page) {
   $container = tiles_get_container('region');
-  $container->renderPage($page);
+  $layout = $container->getLayout(current_path());
+  $container->buildPage($page, $layout);
 
   // Add block weight to all blocks.
-  $context = _tiles_get_active_context();
   foreach (element_children($page) as $region_key) {
     foreach (element_children($page[$region_key]) as $block_key) {
       // Only set the width of the block if it is not already set.
       if (isset($page[$region_key][$block_key]['#block'])) {
         $block = $page[$region_key][$block_key]['#block'];
-          $page[$region_key][$block_key]['#block']->width = tiles_get_width($block->module, $block->delta, ($context ? $context->name : NULL));
+        if (!isset($block->width)) {
+          $page[$region_key][$block_key]['#block']->width = tiles_get_width($block->module, $block->delta);
+        }
       }
     }
   }
@@ -359,30 +357,12 @@ function tiles_node_insert($node) {
   // Allow tiles to be setup programmatically by assigning appropriate blocks to
   // the 'tiles' property on the node object.
   if (isset($node->tiles)) {
-    $context = tiles_get_context('path', 'node/' . $node->nid);
-    tiles_assign_tiles($context, $node->tiles);
+    $layout = tiles_get_container('region')->getLayout('node/' . $node->nid);
+    foreach ($node->tiles as $tile) {
+      $layout->addBlock($tile);
+    }
+    $layout->save();
   }
-}
-
-/**
- * Implements hook_form_FORM_ID_alter().
- */
-function tiles_form_bean_delete_confirm_alter(&$form, $form_state) {
-  // Add callback to delete bean from context.
-  if (isset($_GET['destination'])) {
-    $form['#context'] = 'tiles-' . _tiles_normalize_path($_GET['destination']);
-    $form['#submit'][] = 'tiles_delete_submit';
-  }
-}
-
-function tiles_delete_submit($form, &$form_state) {
-  db_delete('tile_layout_blocks')
-    ->condition('module', 'bean')
-    ->condition('delta', $form['#bean']->delta)
-    ->execute();
-
-  // Clear block and page cache.
-  cache_clear_all();
 }
 
 /**
@@ -408,14 +388,14 @@ function tiles_bean_access($bean, $op, $account) {
  */
 function tiles_block_view_alter(&$data, $block) {
   // Tie tile based block visibility to menu access.
-  if (($context = _tiles_get_active_context()) && isset($context->reactions['tiles']['blocks'])) {
-    if (array_key_exists($block->module . '-' . $block->delta, $context->reactions['tiles']['blocks'])) {
-      $item = menu_get_item();
-      if (!$item['access']) {
-        $data['content'] = '';
-      }
-    }
-  }
+  // if (($context = _tiles_get_active_context()) && isset($context->reactions['tiles']['blocks'])) {
+  //   if (array_key_exists($block->module . '-' . $block->delta, $context->reactions['tiles']['blocks'])) {
+  //     $item = menu_get_item();
+  //     if (!$item['access']) {
+  //       $data['content'] = '';
+  //     }
+  //   }
+  // }
 }
 
 /**
@@ -583,77 +563,15 @@ function tiles_is_tile($module, $delta) {
 }
 
 /**
- * Inserts or updates the block width.
- *
- * @param string $module
- *   The module the block belongs to.
- * @param string $delta
- *   The delta of the block
- * @param string $context_id
- *   The context in which to find the block width.  Will default to a `global`
- *   context if NULL.
- */
-function tiles_set_width($module, $delta, $width, $context_id) {
-  $bid = tiles_block_get_bid($module, $delta);
-
-  // If block ID wasn't found, that means that the block is being added before
-  // _block_rehash() has had a chance to rerun (or bean caches haven't been
-  // cleared). Since it's pretty safe to insert data into the blocks table,
-  // and all other important data will be updated on next cache clear, just
-  // insert necessary data to retrieve a bid.
-  if (!$bid) {
-    $block = array(
-      'module' => $module,
-      'delta' => $delta,
-      'theme' => variable_get('theme_default', ''),
-      'pages' => '',
-      'region' => BLOCK_REGION_NONE,
-    );
-    drupal_write_record('block', $block);
-    $bid = $block['bid'];
-  }
-
-  $check = db_query("SELECT bid FROM {tiles_width} WHERE context_id = :context_id AND bid = :bid", array(
-    ':context_id' => $context_id,
-    ':bid' => $bid,
-  ))->fetchField();
-
-  $values = array(
-    'context_id' => $context_id,
-    'bid' => $bid,
-    'width' => $width,
-  );
-  if ($check) {
-    drupal_write_record('tiles_width', $values, array('context_id', 'bid'));
-  }
-  else {
-    drupal_write_record('tiles_width', $values);
-  }
-}
-
-/**
  * Returns a block's width.
  *
  * The block's width is determined by:
  * - Checking for values from hook_tiles_widths().
- * - Checking if it is an ombublock that has a width value. (overwrites
- *   previous)
  * - Setting to default if none of the above produced a width.
  *
  * @return int $width
  */
-function tiles_get_width($module, $delta, $context_id) {
-  // Pull in the width of the block from the given context
-  $bid = tiles_block_get_bid($module, $delta);
-  $width = db_query("SELECT width FROM {tiles_width} WHERE context_id = :context_id AND bid = :bid LIMIT 1", array(
-    ':context_id' => $context_id,
-    ':bid' => $bid,
-  ))->fetchField();
-
-  if ($width) {
-    return $width;
-  }
-
+function tiles_get_width($module, $delta) {
   // Otherwise see if any hook_tiles_widths defines the width for this block.
   $tiles_widths = module_invoke_all('tiles_widths');
   if (isset($tiles_widths[$module][$delta])) {
@@ -662,17 +580,6 @@ function tiles_get_width($module, $delta, $context_id) {
 
   // Default to max width.
   return tiles_get_max_step();
-}
-
-/**
- * Gets the bid of a block based on module, delta and theme.
- */
-function tiles_block_get_bid($module, $delta, $theme = NULL) {
-  return db_query("SELECT bid FROM {block} WHERE module = :module AND delta = :delta AND theme = :theme", array(
-    ':module' => $module,
-    ':delta' => $delta,
-    ':theme' => $theme ? $theme : variable_get('theme_default', ''),
-  ))->fetchField();
 }
 
 /**
@@ -809,7 +716,9 @@ function _tiles_has_block_access() {
  */
 function _tiles_save_tiles() {
   // @todo: this should use the save method of the appropriate container object.
-  return tiles_get_container()->save();
+  $result = tiles_get_container($_SERVER['HTTP_X_TILES'])->save();
+  drupal_json_output(array('result' => $result));
+  drupal_exit();
 }
 
 /**
