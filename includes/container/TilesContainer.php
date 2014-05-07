@@ -145,8 +145,19 @@ abstract class TilesContainer {
       // Clear out any current blocks in passed region.
       $layout->clearBlocks($manifest->region);
 
-      // Add blocks back to layout.
+      // Split blocks out by breakpoint.
+      $blocks = array();
       foreach ($manifest->blocks as $block) {
+        foreach ($block->breakpoints as $key => $width) {
+          $new_block = clone $block;
+          $new_block->breakpoint = $key;
+          $new_block->width = $width;
+          $blocks[] = $new_block;
+        }
+      }
+
+      // Add blocks back to layout.
+      foreach ($blocks as $block) {
         $layout->addBlock($block);
       }
 

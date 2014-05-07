@@ -64,6 +64,17 @@ function tiles_menu() {
     'weight' => -9,
   );
 
+  $items['admin/structure/block/manage/%/%/set_visibility'] = array(
+    'title' => 'Visibility',
+    'type' => MENU_LOCAL_TASK,
+    'context' => MENU_CONTEXT_INLINE,
+    'page callback' => '_tiles_visibility',
+    'page arguments' => array(4, 5),
+    'access callback' => 'tiles_access',
+    'access arguments' => array('resize', 4, 5),
+    'weight' => -9,
+  );
+
   $items['admin/tiles/add'] = array(
     'title' => 'Add Block',
     'page callback' => 'drupal_get_form',
@@ -262,6 +273,15 @@ function tiles_preprocess_block(&$variables) {
     $variables['attributes_array']['data-delta'] = $block->delta;
     $variables['attributes_array']['data-width'] = $block->width;
 
+    // Add widths for each of the breakpoints.
+    $default_breakpoint = tiles_get_default_breakpoint();
+    $default_width = isset($block->breakpoints[$default_breakpoint]) ? $block->breakpoints[$default_breakpoint] : tiles_get_max_step();
+    $breakpoints = tiles_get_breakpoints();
+    foreach ($breakpoints as $key => $value) {
+      $width = isset($b->breakpoints[$key]) ? $b->breakpoints[$key] : $default_width;
+      $variables['attributes_array']['data-width-' . $key] = $width;
+    }
+
     // Load bean type if block is a bean. Used in
     // tiles_contextual_links_view_alter() to display the bean type in
     // contextual links.
@@ -372,13 +392,13 @@ function tiles_node_insert($node) {
  */
 function tiles_bean_access($bean, $op, $account) {
   // Tie tile based beans visibility to menu access.
-  if ($bean && $op == 'view' && ($context = _tiles_get_active_context()) && isset($context->reactions['tiles']['blocks'])) {
+  // if ($bean && $op == 'view' && ($context = _tiles_get_active_context()) && isset($context->reactions['tiles']['blocks'])) {
 
-    if (array_key_exists('bean-' . $bean->delta, $context->reactions['tiles']['blocks'])) {
-      $item = menu_get_item(current_path());
-      return $item['access'] && current_path() != variable_get('site_403', FALSE) && user_access('view any ' . $bean->type . ' bean');
-    }
-  }
+  //   if (array_key_exists('bean-' . $bean->delta, $context->reactions['tiles']['blocks'])) {
+  //     $item = menu_get_item(current_path());
+  //     return $item['access'] && current_path() != variable_get('site_403', FALSE) && user_access('view any ' . $bean->type . ' bean');
+  //   }
+  // }
 }
 
 /**
@@ -612,6 +632,33 @@ function tiles_get_max_step() {
 }
 
 /**
+ * Gets the breakpoints for the current theme.
+ */
+function tiles_get_breakpoints($theme = NULL) {
+  // Default to default frontend theme.
+  if (!$theme) {
+    $theme = variable_get('theme_default', NULL);
+  }
+  $breakpoints = theme_get_setting('tiles_breakpoints', $theme);
+
+  // If no theme has defined steps, default to bootstrap steps.
+  if (!$breakpoints) {
+    $breakpoints = array('default' => 'default');
+  }
+
+  return $breakpoints;
+}
+
+/**
+ * Gets the default (last) breakpoint.
+ */
+function tiles_get_default_breakpoint() {
+  $breakpoints = tiles_get_breakpoints();
+  end($breakpoints);
+  return key($breakpoints);
+}
+
+/**
  * Returns the appropriate tiles container given a type.
  *
  * @param string $type
@@ -689,6 +736,12 @@ function _tiles_width($block) {
 }
 
 /**
+ * Stub function, handled in js.
+ */
+function _tiles_visibility($block) {
+}
+
+/**
  * Check to see if the current user has access to edit the blocks on the current
  * page by checking to see if the user access to edit the current page.
  */
@@ -746,6 +799,7 @@ function _tiles_js_init() {
 
     $settings = array(
       'tiles' => array(
+        'breakpoints' => tiles_get_breakpoints(),
         'steps' => tiles_get_steps(),
         'stepsKeys' => array_keys(tiles_get_steps()),
       ),

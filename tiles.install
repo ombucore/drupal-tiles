@@ -69,7 +69,7 @@ function tiles_schema() {
         'type' => 'varchar',
         'length' => 64,
         'not null' => TRUE,
-        'default' => 'default',
+        'default' => '',
         'description' => 'Breakpoint at which width and weight apply for this block.',
       ),
       'weight' => array(

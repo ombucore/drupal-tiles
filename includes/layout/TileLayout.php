@@ -30,12 +30,18 @@ class TileLayout extends Entity {
   /**
    * Blocks handled by this layout.
    *
+   * There will be a element for each block within each breakpoint that the
+   * block has a unique width for. This means there might be duplicate
+   * block/delta elements that store different widths for different breakpoints.
+   * These get transformed to a single element within $this->sortedBlocks using
+   * $this->sortBlocks().
+   *
    * @param array
    */
   protected $blocks = array();
 
   /**
-   * Sorted blocks within regions and breakpoints.
+   * Sorted blocks within regions.
    *
    * @param array
    */
@@ -57,13 +63,14 @@ class TileLayout extends Entity {
    *     - region
    *     - module
    *     - delta
-   *     - breakpoint (defaults to 'default')
-   *     - width (defaults to max ste from tiles_get_max_step())
+   *     - breakpoint (defaults to greatest breakpoint defined by theme
+   *       breakpoints)
+   *     - width (defaults to max step from tiles_get_max_step())
    *     - weight
    */
   public function addBlock($block) {
     if (!isset($block->breakpoint)) {
-      $block->breakpoint = 'default';
+      $block->breakpoint = tiles_get_default_breakpoint();
     }
 
     if (!isset($block->width)) {
@@ -79,7 +86,7 @@ class TileLayout extends Entity {
    * Get all sorted blocks.
    *
    * @return array
-   *   All blocks sorted and keyed by region and breakpoint.
+   *   All blocks sorted and keyed by region.
    */
   public function getAllSortedBlocks() {
     if ($this->sortedBlocks === NULL) {
@@ -90,48 +97,34 @@ class TileLayout extends Entity {
   }
 
   /**
-   * Get sorted blocks by a specific region and/or breakpoint.
+   * Get sorted blocks by a specific region.
    *
    * @param string $region
    *   Region key to find blocks for.
-   * @param string $breakpoint
-   *   Breakpoint key to find blocks for.
    *
    * @return array
-   *   Blocks for specified region/breakpoint.
+   *   Blocks for specified region.
    */
-  public function getSortedBlocksByRegion($region, $breakpoint = NULL) {
+  public function getSortedBlocksByRegion($region) {
     if ($this->sortedBlocks === NULL) {
       $this->sortBlocks();
     }
 
-    if ($breakpoint) {
-      return isset($this->sortedBlocks[$region][$breakpoint]) ? $this->sortedBlocks[$region][$breakpoint] : FALSE;
-    }
-    else {
-      return isset($this->sortedBlocks[$region]) ? $this->sortedBlocks[$region] : FALSE;
-    }
+    return isset($this->sortedBlocks[$region]) ? $this->sortedBlocks[$region] : FALSE;
   }
 
   /**
-   * Get renderable blocks for a region and/or breakpoint.
+   * Get renderable blocks for a region.
    *
    * @param string $region
    *   Region key to find blocks for.
-   * @param string $breakpoint
-   *   Breakpoint key to find blocks for.
    *
    * @return array
-   *   Blocks for specified region/breakpoint suitable for drupal_render().
+   *   Blocks for specified region suitable for drupal_render().
    */
-  public function getRenderBlocks($region, $breakpoint = NULL) {
-    $blocks = $this->getSortedBlocksByRegion($region, $breakpoint);
+  public function getRenderBlocks($region) {
+    $blocks = $this->getSortedBlocksByRegion($region);
     if ($blocks) {
-      // If no breakpoint has been set, use default breakpoint.
-      if (!$breakpoint) {
-        $blocks = $blocks['default'];
-      }
-
       // Merge tile layout block info with info from hook_block_info().
       $info = $this->blockInfo();
       foreach ($blocks as $block) {
@@ -207,7 +200,12 @@ class TileLayout extends Entity {
   }
 
   /**
-   * Transform stored blocks into sorted array, keyed by region and breakpoint.
+   * Transform stored blocks into sorted array, keyed by region.
+   *
+   * There might be multiple block definitions in $this->blocks that store
+   * different breakpoint data. This method condenses that information into
+   * a property array called "breakpoints". The width of the block will be set
+   * to the default breakpoint width.
    */
   protected function sortBlocks() {
     $this->sortedBlocks = array();
@@ -217,23 +215,29 @@ class TileLayout extends Entity {
         $this->sortedBlocks[$block->region] = array();
       }
 
-      if (!isset($this->sortedBlocks[$block->region][$block->breakpoint])) {
-        $this->sortedBlocks[$block->region][$block->breakpoint] = array();
+      if (!isset($this->sortedBlocks[$block->region][$block->module . '-' . $block->delta])) {
+        $this->sortedBlocks[$block->region][$block->module . '-' . $block->delta] = $block;
       }
 
-      $this->sortedBlocks[$block->region][$block->breakpoint][] = $block;
+      $this->sortedBlocks[$block->region][$block->module . '-' . $block->delta]->breakpoints[$block->breakpoint] = $block->width;
     }
 
-    foreach ($this->sortedBlocks as $region => $breakpoints) {
-      foreach ($breakpoints as $breakpoint => $blocks) {
-        usort($this->sortedBlocks[$region][$breakpoint], function($a, $b) {
-          $a_weight = (is_array($a) && isset($a->weight)) ? $a->weight : 0;
-          $b_weight = (is_array($b) && isset($b->weight)) ? $b->weight : 0;
-          if ($a_weight == $b_weight) {
-            return 0;
-          }
-          return ($a_weight < $b_weight) ? -1 : 1;
-        });
+    $default_breakpoint = tiles_get_default_breakpoint();
+    foreach ($this->sortedBlocks as $region => $blocks) {
+      uasort($this->sortedBlocks[$region], function($a, $b) {
+        $a_weight = (is_array($a) && isset($a->weight)) ? $a->weight : 0;
+        $b_weight = (is_array($b) && isset($b->weight)) ? $b->weight : 0;
+        if ($a_weight == $b_weight) {
+          return 0;
+        }
+        return ($a_weight < $b_weight) ? -1 : 1;
+      });
+
+      // Make sure width for block is set to default breakpoint width. If not
+      // set, default to max width.
+      foreach ($blocks as $key => $block) {
+        $block->breakpoint = $default_breakpoint;
+        $block->width = isset($block->breakpoints[$default_breakpoint]) ? $block->breakpoints[$default_breakpoint] : tiles_get_max_step();
       }
     }
   }

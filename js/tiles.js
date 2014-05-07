@@ -24,6 +24,19 @@
           block.setResizable();
         });
       });
+
+      $(Tile.prototype.selector.visibilityLink, context).once('block-visibility', function() {
+        $(this).click(function(e) {
+          e.preventDefault();
+          e.stopPropagation();
+          $(e.target).blur();
+          if ($(e.target).closest(Tile.prototype.selector.tile).hasClass('dragging')) {
+            return;
+          }
+          block = new Tile(e.target);
+          block.setVisibility();
+        });
+      });
     }
   };
 
@@ -41,13 +54,18 @@
     this.module = this.domNode.attr('data-module');
     this.delta = this.domNode.attr('data-delta');
     this.width = parseInt(this.domNode.attr('data-width'), 10);;
+    this.breakpoints = [];
+    for (var key in Drupal.settings.tiles.breakpoints) {
+      this.breakpoints[key] = parseInt(this.domNode.attr('data-width-' + key), 10);
+    }
   };
 
   Tile.prototype.selector = {
     tile: '.tile',
     region: '[data-type="region"],[data-type="section"]',
     moveLink: '.contextual-links .block-arrange a',
-    resizeLink: '.contextual-links .block-set-width a'
+    resizeLink: '.contextual-links .block-set-width a',
+    visibilityLink: '.contextual-links .block-set-visibility a'
   };
 
   Tile.prototype.setDraggable = function() {
@@ -161,13 +179,19 @@
         return;
       }
       manifest.blockIndex[module + '-' + delta] = weight;
-      manifest.blocks.push({
+      var block = {
         module: module,
         delta: delta,
         region: region,
         width: parseInt($t.attr('data-width'), 10),
         weight: weight
-      });
+      }
+      block.breakpoints = {};
+      for (var key in Drupal.settings.tiles.breakpoints) {
+        block.breakpoints[key] = parseInt($t.attr('data-width-' + key), 10);
+      }
+      manifest.blocks.push(block);
+      console.debug(block);
       weight++;
     });
     return manifest;
@@ -242,6 +266,20 @@
     return this;
   };
 
+  Tile.prototype.setVisibility = function() {
+    this.domNode.addClass('resizing');
+    $('body').addClass('resizing');
+    this.addVisibilityOverlay();
+    return this;
+  };
+
+  Tile.prototype.unsetVisibility = function() {
+    this.domNode.removeClass('resizing');
+    $('body').removeClass('resizing');
+    this.removeVisibilityOverlay();
+    return this;
+  };
+
   /**
    * TODO Use jQuery template
    */
@@ -267,6 +305,35 @@
     $('select.width-menu', this.domNode).change($.proxy(this, 'widthSelect'));
     $('.width-plus', this.domNode).click($.proxy(this,'widthPlus'));
     $('.width-minus', this.domNode).click($.proxy(this,'widthMinus'));
+    $('.cancel', this.domNode).click($.proxy(this, 'resizeCancel'));
+    $('.save', this.domNode).click($.proxy(this, 'saveManifest'));
+    return this;
+  };
+
+  Tile.prototype.addVisibilityOverlay = function() {
+    // Prevent irresponsible js plugins (twitter I'm looking at you) from using
+    // document.write after a block is moved. Using document.write after a page
+    // load overwrites the whole dom.
+    document.write = function() {};
+
+    var overlayContent = '<div class="visibility-options">';
+
+    for (var key in Drupal.settings.tiles.breakpoints) {
+      var checked = (this.breakpoints[key] > 0) ? ' checked' : '';
+      overlayContent += '<div class="checkbox">';
+      overlayContent += '<label>';
+      overlayContent += '<input name="' + key + '" id="breakpoint-' + key + '" type="checkbox" class="visibility"' + checked + '>';
+      overlayContent += Drupal.settings.tiles.breakpoints[key] + '</label>';
+      overlayContent += '</div>';
+    }
+
+    overlayContent += '</div>';
+    overlayContent += '<div class="save-cancel-wrapper">';
+    overlayContent += '<button class="save">Save</button>';
+    overlayContent += '<span class="cancel">Cancel</span>';
+    overlayContent += '</div>';
+    this.domNode.prepend('<div class="tile-overlay"><div class="inner"><div class="control-wrapper">' + overlayContent + '</div></div></div>');
+    $('.visibility', this.domNode).change($.proxy(this, 'visibilitySelect'));
     $('.cancel', this.domNode).click($.proxy(this, 'resizeCancel'));
     $('.save', this.domNode).click($.proxy(this, 'saveManifest'));
     return this;
@@ -334,6 +401,17 @@
     this.requestRegion(manifest, $.proxy(function() {
       $("[data-module='" + this.module + "'][data-delta='" + this.delta + "'] " + this.selector.resizeLink + ':eq(0)').click();
     }, this));
+  };
+
+  Tile.prototype.visibilitySelect = function(e) {
+    for (var key in Drupal.settings.tiles.breakpoints) {
+      if (!$('input[name="' + key + '"]', this.domNode).is(':checked')) {
+        this.domNode.attr('data-width-' + key, 0);
+      }
+      else {
+        this.domNode.attr('data-width-' + key, this.domNode.attr('data-width'));
+      }
+    }
   };
 
   Tile.prototype.removeResizeOverlay = function() {
