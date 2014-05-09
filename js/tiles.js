@@ -191,7 +191,6 @@
         block.breakpoints[key] = parseInt($t.attr('data-width-' + key), 10);
       }
       manifest.blocks.push(block);
-      console.debug(block);
       weight++;
     });
     return manifest;
@@ -354,6 +353,16 @@
 
     this.setInProgress();
     manifest.blocks[tile_index].width = new_width;
+
+    // Set all breakpoints that aren't set to hidden to new width. This should
+    // be altered once tiles has the ability to set the width on
+    // a per-breakpoint basis.
+    for (var key in Drupal.settings.tiles.breakpoints) {
+      if (manifest.blocks[tile_index].breakpoints[key] != 0) {
+        manifest.blocks[tile_index].breakpoints[key] = new_width;
+      }
+    }
+
     this.requestRegion(manifest, $.proxy(function() {
       $("[data-module='" + this.module + "'][data-delta='" + this.delta + "'] " + this.selector.resizeLink + ':eq(0)').click();
     }, this));
@@ -376,6 +385,16 @@
 
     this.setInProgress();
     manifest.blocks[tile_index].width = new_width;
+
+    // Set all breakpoints that aren't set to hidden to new width. This should
+    // be altered once tiles has the ability to set the width on
+    // a per-breakpoint basis.
+    for (var key in Drupal.settings.tiles.breakpoints) {
+      if (manifest.blocks[tile_index].breakpoints[key] != 0) {
+        manifest.blocks[tile_index].breakpoints[key] = new_width;
+      }
+    }
+
     this.requestRegion(manifest, $.proxy(function() {
       $("[data-module='" + this.module + "'][data-delta='" + this.delta + "'] " + this.selector.resizeLink + ':eq(0)').click();
     }, this));
