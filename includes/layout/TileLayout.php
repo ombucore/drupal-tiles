@@ -69,6 +69,10 @@ class TileLayout extends Entity {
    *     - weight
    */
   public function addBlock($block) {
+    if (!is_object($block)) {
+      $block = (object) $block;
+    }
+
     if (!isset($block->breakpoint)) {
       $block->breakpoint = tiles_get_default_breakpoint();
     }
