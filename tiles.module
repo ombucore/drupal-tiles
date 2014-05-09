@@ -258,7 +258,9 @@ function tiles_page_alter(&$page) {
   }
 
   // Add breakpoints indicator. Don't show when on a media overlay.
-  if (user_access('arrange tiles') && $page['#theme'] != 'media_dialog_page') {
+  if (user_access('arrange tiles') && $page['#theme'] != 'media_dialog_page'
+    && !path_is_admin(current_path())
+  ) {
     $page['page_bottom']['breakpoints_indicator'] = array(
       '#theme' => 'breakpoints_indicator',
       '#breakpoints' => tiles_get_breakpoints(),
