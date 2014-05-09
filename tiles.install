@@ -150,7 +150,12 @@ function tiles_update_7000() {
 
     $layout->save();
     db_query("DELETE FROM {context} WHERE name = :name", array(':name' => $context->name));
+    db_query("DELETE FROM {tiles_width} WHERE context_id = :name", array(':name' => $context->name));
   }
 
-  db_drop_table('tiles_width');
+  // Only delete tiles width table if empty, in order to allow other modules
+  // using tiles as a base (e.g. tiles_sections) to upgrade.
+  if (db_query("SELECT COUNT(*) FROM {tiles_width}")->fetchField() == 0) {
+    db_drop_table('tiles_width');
+  }
 }

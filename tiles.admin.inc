@@ -169,6 +169,7 @@ function tiles_add_form_add_submit($form, &$form_state) {
     'weight' => 50,
   );
   $layout->addBlock($block);
+  $layout->save();
 }
 
 /**

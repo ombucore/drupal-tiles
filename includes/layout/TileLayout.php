@@ -83,7 +83,7 @@ class TileLayout extends Entity {
 
     $this->blocks[] = $block;
     $this->sortedBlocks = NULL;
-    $this->bockInfo = array();
+    $this->blockInfo = array();
   }
 
   /**

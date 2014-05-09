@@ -28,7 +28,7 @@ abstract class TilesContainer {
    *   TileLayout entity for the given selector.
    */
   public function getLayout($selector) {
-    $layouts = entity_get_controller('tile_layout')->loadBySelector($selector);
+    $layouts = entity_get_controller('tile_layout')->loadBySelector($selector, $this->container);
     if (!empty($layouts)) {
       return array_shift($layouts);
     }

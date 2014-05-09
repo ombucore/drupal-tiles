@@ -292,7 +292,7 @@ function tiles_preprocess_block(&$variables) {
     $default_width = isset($block->breakpoints[$default_breakpoint]) ? $block->breakpoints[$default_breakpoint] : tiles_get_max_step();
     $breakpoints = tiles_get_breakpoints();
     foreach ($breakpoints as $key => $value) {
-      $width = isset($b->breakpoints[$key]) ? $b->breakpoints[$key] : $default_width;
+      $width = isset($block->breakpoints[$key]) ? $block->breakpoints[$key] : $default_width;
       $variables['attributes_array']['data-width-' . $key] = $width;
     }
 

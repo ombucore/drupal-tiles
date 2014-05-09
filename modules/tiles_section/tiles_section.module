@@ -55,47 +55,6 @@ function tiles_section_theme($existing, $type, $theme, $path) {
 }
 
 /**
- * Implements hook_ctools_plugin_api().
- */
-function tiles_section_ctools_plugin_api($module, $api) {
-  if ($module == 'context' && $api == 'plugins') {
-    return array('version' => 3);
-  }
-}
-
-/**
- * Implements hook_context_plugins().
- */
-function tiles_section_context_plugins() {
-  $plugins = array();
-  $plugins['tiles_section_context_condition_section'] = array(
-    'handler' => array(
-      'path' => drupal_get_path('module', 'tiles_section') . '/plugins',
-      'file' => 'tiles_section_context_condition_section.inc',
-      'class' => 'tiles_section_context_condition_section',
-      'parent' => 'context_condition',
-    ),
-  );
-  return $plugins;
-}
-
-/**
- * Implements of hook_context_registry().
- */
-function tiles_section_context_registry() {
-  $registry = array();
-
-  $registry['conditions'] = array(
-    'tiles_section' => array(
-      'title' => t('Section'),
-      'description' => 'This condition triggers for a specific section within a sectioned field.  Internal use only, should not be used otherwise.',
-      'plugin' => 'tiles_section_context_condition_section',
-    ),
-  );
-  return $registry;
-}
-
-/**
  * Implements hook_field_widget_info_alter().
  */
 function tiles_section_field_widget_info_alter(&$info) {
@@ -388,50 +347,6 @@ function tiles_section_tiles_container_info() {
 }
 
 /**
- * Return or create a new tiles section context.
- */
-function tiles_section_get_context($nid, $section) {
-  $namespace = 'tiles-section-' . $nid . '-' . $section;
-  if (!($context = context_load($namespace))) {
-    $context = new stdClass();
-    $context->name = $namespace;
-    $context->tag = 'tiles-section';
-    $context->description = '';
-
-    $context->conditions = array(
-      'tiles_section' => array(
-        'values' => array(
-          $nid . '-' . $section => $nid . '-' . $section,
-        ),
-      ),
-    );
-
-    context_save($context);
-  }
-
-  return $context;
-}
-
-/**
- * Implements hook_entity_delete().
- *
- * Respond to bean deletions by removing block from tiles_section contexts.
- */
-function tiles_section_entity_delete($entity, $type) {
-  if ($type == 'bean') {
-    $contexts = db_query("SELECT * FROM {context} WHERE tag = 'tiles-section'");
-    foreach ($contexts as $context) {
-      $reactions = unserialize($context->reactions);
-      if (isset($reactions['tiles']['blocks']['bean-' . $entity->delta])) {
-        $context = context_load($context->name);
-        unset($context->reactions['tiles']['blocks']['bean-' . $entity->delta]);
-        context_save($context);
-      }
-    }
-  }
-}
-
-/**
  * Theme callbacks.
  */
 
@@ -473,59 +388,28 @@ function template_preprocess_tiles_section(&$variables) {
   $variables['title_visible'] = $element['settings']['visible'];
   $variables['id'] = drupal_clean_css_identifier($element['section']);
 
-  $variables['context_id'] = '';
+  $selector = $element['node']->nid . '-' . $element['id'];
+  $variables['selector'] = $selector;
 
-  // Load up any blocks that have been added to this section through tiles. This
-  // uses an internal context condition and tiles reactions to load up blocks by
-  // mocking a page region render array.
-  if ($plugin = context_get_plugin('condition', 'tiles_section')) {
-    $contexts = $plugin->execute($element['node']->nid . '-' . $element['id']);
+  $build = array('content' => array());
 
-    if ($contexts) {
-      // There can only be one active section context at a time.
-      $context = array_pop($contexts);
-      $variables['context_id'] = $context->name;
+  // Load up any blocks that have been added to this section through tiles.
+  $container = tiles_get_container('section');
+  $layout = $container->getLayout($selector);
+  $container->buildPage($build, $layout);
 
-      // Store currently active contexts.
-      $active_contexts = context_active_contexts();
-      context_clear();
-
-      // Temporarily set contexts to be active.
-      context_condition_met($context, $plugin->plugin);
-
-      // Trigger tiles reaction.
-      if ($plugin = context_get_plugin('reaction', 'tiles')) {
-        // Create a dummy 'page' render array with a single region 'content' so
-        // tiles reaction will place blocks within that region.
-        $build = array('content' => array());
-
-        drupal_static_reset('context_reaction_block_list');
-        $plugin->execute($build);
-
-        $tiles = &$build['content'];
-
-        if ($tiles) {
-          // Get tiles width for each block.
-          foreach (element_children($tiles) as $block_key) {
-            // Only set the width of the block if it is not already set.
-            if (isset($tiles[$block_key]['#block'])) {
-              $block = $tiles[$block_key]['#block'];
-              $tiles[$block_key]['#block']->width = tiles_get_width($block->module, $block->delta, ($context ? $context->name : NULL));
-            }
-          }
-
-          // Let tiles wrap blocks.
-          tiles_region_wrap($build['content']);
-          $variables['tiles'] = $build['content'];
-        }
-      }
-
-      // Re-enable previously unset contexts.
-      foreach ($active_contexts as $context) {
-        context_set('context', $context->name, $context);
-      }
+  // Get tiles width for each block.
+  foreach (element_children($build['content']) as $block_key) {
+    // Only set the width of the block if it is not already set.
+    if (isset($tiles[$block_key]['#block'])) {
+      $block = $tiles[$block_key]['#block'];
+      $tiles[$block_key]['#block']->width = tiles_get_width($block->module, $block->delta, ($context ? $context->name : NULL));
     }
   }
+
+  $container->wrapRegion($build['content']);
+
+  $variables['tiles'] = $build['content'];
 }
 
 /**
@@ -534,11 +418,10 @@ function template_preprocess_tiles_section(&$variables) {
  * Redirects user to appropriate tiles add block screen.
  */
 function tiles_section_add_tile($node, $section) {
-  $namespace = 'tiles-section-' . $node->nid . '-' . $section;
-  $context = tiles_section_get_context($node->nid, $section);
+  $selector = $node->nid . '-' . $section;
 
   // Keep user in overlay.
-  $url = 'admin/tiles/add/section/' . $namespace;
+  $url = 'admin/tiles/add/section/' . $selector;
   if (module_exists('overlay') && overlay_get_mode() == 'child') {
     overlay_close_dialog($_GET['destination'], array('fragment' => 'overlay=' . urlencode($url . '?destination=' . $_GET['destination'])));
   }

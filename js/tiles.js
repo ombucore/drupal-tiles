@@ -164,7 +164,7 @@
     var region = this.region.attr('data-name');
     var manifest = {
       region: region,
-      selector: this.region.attr('data-selector') ? this.region.attr('data-selector') : Drupal.settings.tiles.selector,
+      selector: this.region.attr('data-tiles-selector') ? this.region.attr('data-tiles-selector') : Drupal.settings.tiles.selector,
       type: this.region.attr('data-type'),
       blockIndex: {},
       blocks: []
@@ -335,7 +335,7 @@
     this.domNode.prepend('<div class="tile-overlay"><div class="inner"><div class="control-wrapper">' + overlayContent + '</div></div></div>');
     $('.visibility', this.domNode).change($.proxy(this, 'visibilitySelect'));
     $('.cancel', this.domNode).click($.proxy(this, 'resizeCancel'));
-    $('.save', this.domNode).click($.proxy(this, 'saveManifest'));
+    $('.save', this.domNode).click($.proxy(this, 'saveVisibility'));
     return this;
   };
 
@@ -413,6 +413,11 @@
       }
     }
   };
+
+  Tile.prototype.saveVisibility = function(e) {
+    this.requestRegion(this.regionManifest());
+    this.saveManifest();
+  }
 
   Tile.prototype.removeResizeOverlay = function() {
     $('.tile-overlay', this.domNode).remove();
