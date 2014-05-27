@@ -163,6 +163,9 @@ function tiles_permission() {
     'add tiles' => array(
       'title' => t('Add new tiles'),
     ),
+    'set tile indexable status' => array(
+      'title' => t('Set the search index status for tiles'),
+    ),
   );
 }
 
@@ -434,6 +437,58 @@ function tiles_node_insert($node) {
     $context = tiles_get_context('path', 'node/' . $node->nid);
     tiles_assign_tiles($context, $node->tiles);
   }
+}
+
+/**
+ * Implements hook_node_update_index().
+ *
+ * Adds tiles that are configured to be indexed with nodes to search index.
+ */
+function tiles_node_update_index($node) {
+  $content = '';
+
+  $context = tiles_get_context('path', 'node/' . $node->nid);
+  if ($context) {
+    $content = tiles_index_context($context);
+  }
+
+  return $content;
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ *
+ * Need to fix tiles.module so that all bean form alters affect tiles forms as
+ * well.
+ */
+function tiles_form_tiles_add_form_alter(&$form, $form_state) {
+  if (isset($form['bean_form'])) {
+    tiles_form_bean_form_alter($form['bean_form'], $form_state, 'tiles_add_form', $form['context']['#value']);
+  }
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function tiles_form_bean_form_alter(&$form, $form_state, $form_id, $context = NULL) {
+  if (isset($form_state['bean']->delta)) {
+    $indexable = tiles_get_search_index_status('bean', $form_state['bean']->delta, $context);
+  }
+  else {
+    $index_defaults = variable_get('tiles_bean_type_index_defaults', array());
+    if (isset($index_defaults[$form_state['bean']->type])) {
+      $indexable = (bool) $index_defaults[$form_state['bean']->type];
+    }
+  }
+
+  $form['indexable'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Add to page search index'),
+    '#description' => t('Check to include this block content when searching for the page this block is a part of.'),
+    '#access' => user_access('set tile indexable status'),
+    '#default_value' => isset($indexable) ? $indexable : FALSE,
+    '#weight' => 10,
+  );
 }
 
 /**
@@ -709,6 +764,65 @@ function tiles_set_width($module, $delta, $width, $context_id) {
 }
 
 /**
+ * Inserts or updates the block index state.
+ *
+ * @param string $module
+ *   The module the block belongs to.
+ * @param string $delta
+ *   The delta of the block
+ * @param string $context_id
+ *   The context in which to find the block width.  Will default to a `global`
+ *   context if NULL.
+ */
+function tiles_set_indexable($module, $delta, $indexable, $context_id = NULL) {
+  $bid = tiles_block_get_bid($module, $delta);
+
+  // If block ID wasn't found, that means that the block is being added before
+  // _block_rehash() has had a chance to rerun (or bean caches haven't been
+  // cleared). Since it's pretty safe to insert data into the blocks table,
+  // and all other important data will be updated on next cache clear, just
+  // insert necessary data to retrieve a bid.
+  if (!$bid) {
+    $block = array(
+      'module' => $module,
+      'delta' => $delta,
+      'theme' => variable_get('theme_default', ''),
+      'pages' => '',
+      'region' => BLOCK_REGION_NONE,
+    );
+    drupal_write_record('block', $block);
+    $bid = $block['bid'];
+  }
+
+  if ($context_id) {
+    $check = db_query("SELECT bid FROM {tiles_width} WHERE context_id = :context_id AND bid = :bid", array(
+      ':context_id' => $context_id,
+      ':bid' => $bid,
+    ))->fetchField();
+
+    $values = array(
+      'context_id' => $context_id,
+      'bid' => $bid,
+      'indexable' => $indexable,
+    );
+    if ($check) {
+      drupal_write_record('tiles_width', $values, array('context_id', 'bid'));
+    }
+    else {
+      drupal_write_record('tiles_width', $values);
+    }
+  }
+  else {
+    db_update('tiles_width')
+      ->values(array(
+        'indexable' => $indexable,
+      ))
+      ->condition('bid', $bid)
+      ->execute();
+  }
+}
+
+/**
  * Returns a block's width.
  *
  * The block's width is determined by:
@@ -739,6 +853,44 @@ function tiles_get_width($module, $delta, $context_id) {
 
   // Default to max width.
   return tiles_get_max_step();
+}
+
+/**
+ * Returns a block's search index status.
+ *
+ * The block's width is determined by:
+ * - Setting from {tiles_width}.
+ * - Default setting for block type.
+ */
+function tiles_get_search_index_status($module, $delta, $context_id = NULL) {
+  $query = db_select('tiles_width', 'tw');
+  $query->addField('tw', 'indexable');
+
+  // Pull in the width of the block from the given context
+  $bid = tiles_block_get_bid($module, $delta);
+
+  $query->condition('bid', $bid);
+
+  // Add context id if present. This isn't always known, like when editing
+  // a bean.
+  if ($context_id) {
+    $query->condition('context_id', $context_id);
+  }
+
+  $indexable = $query->execute()->fetchField();
+
+  if ($indexable) {
+    return (bool) $indexable;
+  }
+
+  // Otherwise use defaults for bean type.
+  $bean = bean_load_delta($delta);
+  $index_defaults = variable_get('tiles_bean_type_index_defaults', array());
+  if (isset($index_defaults[$bean->type])) {
+    return (bool) $index_defaults[$bean->type];
+  }
+
+  return FALSE;
 }
 
 /**
@@ -904,6 +1056,9 @@ function tiles_assign_tiles($context, $tiles) {
     if (isset($block['width'])) {
       tiles_set_width($block['module'], $block['delta'], $block['width'], $context->name);
     }
+    if (isset($block['indexable'])) {
+      tiles_set_indexable($block['module'], $block['delta'], $block['indexable'], $context->name);
+    }
   }
 
   $return = context_save($context);
@@ -939,6 +1094,29 @@ function tiles_get_container($type = 'region') {
   }
 
   return FALSE;
+}
+
+/**
+ * Return search indexable content from tiles context.
+ */
+function tiles_index_context($context) {
+  $content = '';
+
+  if (isset($context->reactions['tiles']['blocks'])) {
+    $blocks = array();
+    foreach ($context->reactions['tiles']['blocks'] as $block) {
+      // Currently only beans are supported for indexing. This makes sense
+      // anyway since beans used in tiles are unique to the page they are added
+      // to.
+      if ($block['module'] == 'bean' && tiles_get_search_index_status($block['module'], $block['delta'], $context->name)) {
+        $blocks[] = block_load('bean', $block['delta']);
+      }
+    }
+    $render = _block_get_renderable_array(_block_render_blocks($blocks));
+    $content = drupal_render($render);
+  }
+
+  return $content;
 }
 
 /**

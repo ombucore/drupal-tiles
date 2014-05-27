@@ -31,6 +31,15 @@ function tiles_schema() {
         'unsigned' => TRUE,
         'not null' => TRUE,
       ),
+      // Just use tiles_width for now, since in 0.5 context is gone and this is
+      // a unified tile table.
+      'indexable' => array(
+        'description' => 'The index status of a block.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
     ),
     'foreign keys' => array(
       'context_id' => array(
@@ -47,4 +56,17 @@ function tiles_schema() {
     ),
   );
   return $schema;
+}
+
+/**
+ * Add new indexable column to tiles width table.
+ */
+function tiles_update_7001() {
+  db_add_field('tiles_width', 'indexable', array(
+    'description' => 'The index status of a block.',
+    'type' => 'int',
+    'unsigned' => TRUE,
+    'not null' => TRUE,
+    'default' => 0,
+  ));
 }
