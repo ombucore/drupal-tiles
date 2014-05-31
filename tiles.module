@@ -405,6 +405,12 @@ function tiles_contextual_links_view_alter(&$element, $items) {
       unset($element['#links']['block-delete']);
     }
 
+    // Alter the bean edit link to pass in current context in order to get the
+    // proper indexable state.
+    if (isset($element['#links']['bean-edit']) && isset($element['#element']['#block']->context)) {
+      $element['#links']['bean-edit']['query']['context'] = $element['#element']['#block']->context;
+    }
+
     // Add block type to links.
     if ($block->module == 'bean' && tiles_is_tile('bean', $block->delta) && user_access('arrange tiles')) {
       $element['#links'] = array(
@@ -471,6 +477,24 @@ function tiles_form_tiles_add_form_alter(&$form, $form_state) {
  * Implements hook_form_FORM_ID_alter().
  */
 function tiles_form_bean_form_alter(&$form, $form_state, $form_id, $context = NULL) {
+  // Context has the possibility of being set through query string.
+  if (!$context && isset($_GET['context'])) {
+    $context = $_GET['context'];
+  }
+
+  // Index state can only be set if editing a bean with a context.
+  if (!$context) {
+    return;
+  }
+
+  // Add context and submit handler. This will only effect bean forms, not tiles
+  // add forms, since tiles add forms don't use the bean form submit handlers.
+  $form['context'] = array(
+    '#type' => 'value',
+    '#value' => $context,
+  );
+  $form['actions']['submit']['#submit'][] = 'tiles_form_bean_form_submit';
+
   if (isset($form_state['bean']->delta)) {
     $indexable = tiles_get_search_index_status('bean', $form_state['bean']->delta, $context);
   }
@@ -489,6 +513,37 @@ function tiles_form_bean_form_alter(&$form, $form_state, $form_id, $context = NU
     '#default_value' => isset($indexable) ? $indexable : FALSE,
     '#weight' => 10,
   );
+}
+
+/**
+ * Submit handler for bean form.
+ *
+ * Saves indexable state for bean edits.
+ */
+function tiles_form_bean_form_submit($form, &$form_state) {
+  $bean = $form_state['values']['bean'];
+  tiles_set_indexable('bean', $bean->delta, $form_state['values']['indexable'], $form_state['values']['context']);
+
+  // Attempt to mark destination path from context as needing reindexing from
+  // solr. Currently only supports entity paths.
+  $context = context_load($form_state['values']['context']);
+  if (isset($context->conditions['path'])) {
+    $path = key($context->conditions['path']['values']);
+
+    // Handle special case of taxonomy terms. Most other entities use the entity
+    // type as the first path part (e.g. "node/x"), but taxonomy terms are
+    // "special" and use "taxonomy/term/x", so require special handling.
+    if (preg_match('#taxonomy/term/([0-9+])#', $path, $matches)) {
+      $parts = array(
+        'taxonomy_term',
+        $matches[1],
+      );
+    }
+    else {
+      $parts = explode('/', $path);
+    }
+    apachesolr_mark_entity($parts[0], $parts[1]);
+  }
 }
 
 /**
@@ -862,7 +917,7 @@ function tiles_get_width($module, $delta, $context_id) {
  * - Setting from {tiles_width}.
  * - Default setting for block type.
  */
-function tiles_get_search_index_status($module, $delta, $context_id = NULL) {
+function tiles_get_search_index_status($module, $delta, $context_id) {
   $query = db_select('tiles_width', 'tw');
   $query->addField('tw', 'indexable');
 
@@ -870,12 +925,7 @@ function tiles_get_search_index_status($module, $delta, $context_id = NULL) {
   $bid = tiles_block_get_bid($module, $delta);
 
   $query->condition('bid', $bid);
-
-  // Add context id if present. This isn't always known, like when editing
-  // a bean.
-  if ($context_id) {
-    $query->condition('context_id', $context_id);
-  }
+  $query->condition('context_id', $context_id);
 
   $indexable = $query->execute()->fetchField();
 
