@@ -432,6 +432,51 @@ function tiles_section_entity_delete($entity, $type) {
 }
 
 /**
+ * Implements hook_apachesolr_field_mappings().
+ */
+function tiles_section_apachesolr_field_mappings() {
+  $mappings = array(
+    'tiles_section' => array(
+      'indexing_callback' => array('tiles_section_apachesolr_indexing_callback'),
+      'index_type' => 'text',
+      'facets' => FALSE,
+      'query types' => array('term'),
+      'query type' => 'term',
+    ),
+  );
+
+  return $mappings;
+}
+
+/**
+ * Indexing callback for tile section fields.
+ *
+ * Allows beans within sections to be indexed as page content. Only shows beans
+ * that have been marked as indexable.
+ *
+ * @see tiles_get_search_index_status().
+ */
+function tiles_section_apachesolr_indexing_callback($entity, $field_name, $index_key, array $field_info) {
+  $fields = array();
+  if (!empty($entity->{$field_name})) {
+    $entity_id = $entity->nid;
+
+    $field = $entity->$field_name;
+    list($lang, $values) = each($field);
+
+    for ($i = 0; $i < count($values); $i++) {
+      $context = tiles_section_get_context($entity_id, $values[$i]['id']);
+      $fields[] = array(
+        'key' => $index_key,
+        'value' => apachesolr_clean_text(tiles_index_context($context)),
+      );
+    }
+  }
+
+  return $fields;
+}
+
+/**
  * Theme callbacks.
  */
 
