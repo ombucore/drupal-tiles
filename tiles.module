@@ -190,6 +190,9 @@ function tiles_permission() {
     'add tiles' => array(
       'title' => t('Add new tiles'),
     ),
+    'set tile indexable status' => array(
+      'title' => t('Set the search index status for tiles'),
+    ),
   );
 }
 
@@ -360,6 +363,12 @@ function tiles_contextual_links_view_alter(&$element, $items) {
     // Remove the delete link for system main block.
     if ($block->module == 'system' && $block->delta == 'main') {
       unset($element['#links']['block-delete']);
+    }
+
+    // Alter the bean edit link to pass in current context in order to get the
+    // proper indexable state.
+    if (isset($element['#links']['bean-edit']) && isset($element['#element']['#block']->context)) {
+      $element['#links']['bean-edit']['query']['context'] = $element['#element']['#block']->context;
     }
 
     // Add block type to links.
@@ -697,6 +706,29 @@ function tiles_get_container($type = 'region') {
   }
 
   return FALSE;
+}
+
+/**
+ * Return search indexable content from tiles context.
+ */
+function tiles_index_context($context) {
+  $content = '';
+
+  if (isset($context->reactions['tiles']['blocks'])) {
+    $blocks = array();
+    foreach ($context->reactions['tiles']['blocks'] as $block) {
+      // Currently only beans are supported for indexing. This makes sense
+      // anyway since beans used in tiles are unique to the page they are added
+      // to.
+      if ($block['module'] == 'bean' && tiles_get_search_index_status($block['module'], $block['delta'], $context->name)) {
+        $blocks[] = block_load('bean', $block['delta']);
+      }
+    }
+    $render = _block_get_renderable_array(_block_render_blocks($blocks));
+    $content = drupal_render($render);
+  }
+
+  return $content;
 }
 
 /**
