@@ -84,8 +84,6 @@ function tiles_schema() {
         'unsigned' => TRUE,
         'not null' => TRUE,
       ),
-      // Just use tiles_width for now, since in 0.5 context is gone and this is
-      // a unified tile table.
       'indexable' => array(
         'description' => 'The index status of a block.',
         'type' => 'int',
@@ -113,9 +111,24 @@ function tiles_schema() {
 }
 
 /**
+ * Add new indexable column to tiles width table.
+ */
+function tiles_update_7001() {
+  if (db_table_exists('tiles_width')) {
+    db_add_field('tiles_width', 'indexable', array(
+      'description' => 'The index status of a block.',
+      'type' => 'int',
+      'unsigned' => TRUE,
+      'not null' => TRUE,
+      'default' => 0,
+    ));
+  }
+}
+
+/**
  * Moves tiles off of context.
  */
-function tiles_update_7000() {
+function tiles_update_7002() {
   $schema = tiles_schema();
   if (!db_table_exists('tile_layout')) {
     db_create_table('tile_layout', $schema['tile_layout']);

@@ -67,6 +67,7 @@ class TileLayout extends Entity {
    *       breakpoints)
    *     - width (defaults to max step from tiles_get_max_step())
    *     - weight
+   *     - indexable (should this block be indexed along with parent layout)
    */
   public function addBlock($block) {
     if (!is_object($block)) {
