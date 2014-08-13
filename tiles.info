@@ -6,6 +6,6 @@ php = 5.1
 
 dependencies[] = context
 
-files[] = plugins/tiles_context_block_reaction.inc
+files[] = plugins/tiles_context_reaction_block.inc
 files[] = includes/TilesContainer.php
 files[] = includes/TilesRegionContainer.php
