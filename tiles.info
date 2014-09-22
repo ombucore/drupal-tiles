@@ -4,7 +4,7 @@ package = 'Tiles'
 core = 7.x
 php = 5.1
 
-verison = 7.x-0.2
+verison = 7.x-0.3.1
 
 dependencies[] = context
 
