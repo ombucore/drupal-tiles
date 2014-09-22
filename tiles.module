@@ -379,7 +379,7 @@ function tiles_tiles_info() {
     // Add all bean types that the current user has permission to edit.
     $types = bean_get_types();
     foreach ($types as $k => $v) {
-      if (user_access('administer beans') || user_access("view any $k bean")) {
+      if (user_access('administer beans') || user_access("create any $k bean")) {
         $tiles['bean types'][] = $k;
       }
     }
