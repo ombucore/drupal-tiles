@@ -453,7 +453,7 @@ function tiles_node_insert($node) {
 function tiles_node_update_index($node) {
   $content = '';
 
-  $context = tiles_get_context('path', 'node/' . $node->nid);
+  $context = context_load('tiles-node-' . $node->nid);
   if ($context) {
     $content = tiles_index_context($context);
   }
