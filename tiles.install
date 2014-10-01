@@ -126,9 +126,16 @@ function tiles_update_7001() {
 }
 
 /**
- * Moves tiles off of context.
+ * Make sure registry is rebuilt to avoid upgrade troubles.
  */
 function tiles_update_7002() {
+  drupal_flush_all_caches();
+}
+
+/**
+ * Moves tiles off of context.
+ */
+function tiles_update_7003() {
   $schema = tiles_schema();
   if (!db_table_exists('tile_layout')) {
     db_create_table('tile_layout', $schema['tile_layout']);
@@ -166,6 +173,9 @@ function tiles_update_7002() {
           ':theme'      => variable_get('theme_default', ''),
           ':context_id' => $context->name,
         ))->fetchField();
+      if (!$block->width) {
+        $block->width = tiles_get_max_step();
+      }
 
       $layout->addBlock($block);
     }
