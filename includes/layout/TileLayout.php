@@ -74,6 +74,11 @@ class TileLayout extends Entity {
       $block = (object) $block;
     }
 
+    // Force bid to be {module}-{delta}. This is in part to be compatible with
+    // block reactions in context, but also provides a quick way to determine
+    // block source.
+    $block->bid = $block->module . '-' . $block->delta;
+
     if (!isset($block->breakpoint)) {
       $block->breakpoint = tiles_get_default_breakpoint();
     }
