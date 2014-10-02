@@ -576,7 +576,7 @@ function tiles_tiles_container_info() {
 function tiles_bean_delete($bean) {
   db_delete('tile_layout_blocks')
     ->condition('module', 'bean')
-    ->condition('delta', $form['#bean']->delta)
+    ->condition('delta', $bean->delta)
     ->execute();
 
   // Clear block and page cache.
