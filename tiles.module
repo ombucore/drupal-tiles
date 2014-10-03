@@ -848,8 +848,9 @@ function tiles_set_indexable($module, $delta, $indexable, $context_id = NULL) {
     drupal_write_record('block', $block);
     $bid = $block['bid'];
   }
-
   if ($context_id) {
+    // Get width of bean for new titles_width entry.
+    $width = tiles_get_width($module, $delta, $context_id);
     $check = db_query("SELECT bid FROM {tiles_width} WHERE context_id = :context_id AND bid = :bid", array(
       ':context_id' => $context_id,
       ':bid' => $bid,
@@ -858,6 +859,7 @@ function tiles_set_indexable($module, $delta, $indexable, $context_id = NULL) {
     $values = array(
       'context_id' => $context_id,
       'bid' => $bid,
+      'width' => $width,
       'indexable' => $indexable,
     );
     if ($check) {
