@@ -64,6 +64,8 @@ function tiles_menu() {
     'weight' => -9,
   );
 
+  /* Hide visibility until properly implemented.
+   * For now, there's only one breakpoint, so doesn't make sense to expose menu.
   $items['admin/structure/block/manage/%/%/set_visibility'] = array(
     'title' => 'Visibility',
     'type' => MENU_LOCAL_TASK,
@@ -74,6 +76,7 @@ function tiles_menu() {
     'access arguments' => array('resize', 4, 5),
     'weight' => -9,
   );
+  */
 
   $items['admin/tiles/add'] = array(
     'title' => 'Add Block',
