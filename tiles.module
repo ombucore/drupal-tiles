@@ -443,6 +443,11 @@ function tiles_form_tiles_add_form_alter(&$form, $form_state) {
  * Implements hook_form_FORM_ID_alter().
  */
 function tiles_form_bean_form_alter(&$form, $form_state, $form_id, $layout = NULL) {
+  // Only show if user has access to set indexable state on bean.
+  if (!user_access('set tile indexable status')) {
+    return;
+  }
+
   // Context has the possibility of being set through query string.
   if (!$layout && isset($_GET['tid']) && is_numeric($_GET['tid'])) {
     $layout = entity_load_single('tile_layout', $_GET['tid']);
