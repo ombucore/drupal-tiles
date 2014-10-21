@@ -170,6 +170,12 @@ function tiles_add_form_add_submit($form, &$form_state) {
   );
   $layout->addBlock($block);
   $layout->save();
+
+  $indexable = $form_state['values']['indexable'];
+  tiles_set_indexable('bean', $bean->delta, $indexable, $layout->tid);
+  if ($indexable) {
+    tiles_indexable_mark($layout);
+  }
 }
 
 /**

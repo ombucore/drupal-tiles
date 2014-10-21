@@ -499,27 +499,8 @@ function tiles_form_bean_form_submit($form, &$form_state) {
 
   // Attempt to mark destination path from layout as needing reindexing from
   // solr. Currently only supports region layouts (with path).
-  if ($form_state['values']['indexable'] && $layout->container == 'region') {
-    $path = $layout->selector;
-    // Handle special case of taxonomy terms. Most other entities use the entity
-    // type as the first path part (e.g. "node/x"), but taxonomy terms are
-    // "special" and use "taxonomy/term/x", so require special handling.
-    if (preg_match('#taxonomy/term/([0-9+])#', $path, $matches)) {
-      $parts = array(
-        'taxonomy_term',
-        $matches[1],
-      );
-    }
-    else {
-      $parts = explode('/', $path);
-    }
-
-    if (module_exists('apachesolr')) {
-      apachesolr_mark_entity($parts[0], $parts[1]);
-    }
-    if (module_exists('search') && $parts[0] == 'node') {
-      search_touch_node($parts[1]);
-    }
+  if ($form_state['values']['indexable']) {
+    tiles_indexable_mark($layout);
   }
 }
 
@@ -776,6 +757,37 @@ function tiles_get_indexable($module, $delta, $tid) {
   }
 
   return FALSE;
+}
+
+/**
+ * Attempts to mark destination path form layout as needing reindexing.
+ *
+ * Checks both apachesolr and core search. Currently only supports region
+ * layouts (with path).
+ */
+function tiles_indexable_mark($layout) {
+  if ($layout->container == 'region') {
+    $path = $layout->selector;
+    // Handle special case of taxonomy terms. Most other entities use the entity
+    // type as the first path part (e.g. "node/x"), but taxonomy terms are
+    // "special" and use "taxonomy/term/x", so require special handling.
+    if (preg_match('#taxonomy/term/([0-9+])#', $path, $matches)) {
+      $parts = array(
+        'taxonomy_term',
+        $matches[1],
+      );
+    }
+    else {
+      $parts = explode('/', $path);
+    }
+
+    if (module_exists('apachesolr')) {
+      apachesolr_mark_entity($parts[0], $parts[1]);
+    }
+    if (module_exists('search') && $parts[0] == 'node') {
+      search_touch_node($parts[1]);
+    }
+  }
 }
 
 /**
