@@ -30,7 +30,7 @@ function tiles_add_form($form, &$form_state, $type = 'region', $selector = NULL)
     }
     $form_state['layout'] = $container->getLayout($selector);
 
-    $tile_options = tiles_get_tile_types_options();
+    $tile_options = tiles_get_tile_types_options($container->getTileTypes());
     $form['block_type'] = array(
       '#type' => 'select',
       '#title' => t('Block Type'),

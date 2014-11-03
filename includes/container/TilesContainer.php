@@ -54,6 +54,19 @@ abstract class TilesContainer {
   }
 
   /**
+   * Get a list of block/bean types available for adding to this container.
+   *
+   * Defaults to all tile types provided by tiles_get_tile_types().
+   *
+   * @return array
+   *   Array of blocks and bean types available for tiles in the form of
+   *   MODULE__DELTA.
+   */
+  public function getTileTypes() {
+    return tiles_get_tile_types();
+  }
+
+  /**
    * Place blocks from a layout into regions.
    *
    * @param array $page

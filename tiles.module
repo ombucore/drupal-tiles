@@ -617,8 +617,15 @@ function tiles_get_tile_types() {
  * Useful when showing a list of available blocks/types in an option form.  For
  * example, see tiles_add_form(). Also checks if current user has access to edit
  * bean types.
+ *
+ * @param array $tiles
+ *   Array of block/bean types as returned from tiles_get_tile_types().
+ *
+ *
+ * @return array
+ *   Array of key/value types for use in a select form element.
  */
-function tiles_get_tile_types_options() {
+function tiles_get_tile_types_options($tiles) {
   $tiles_options = &drupal_static(__FUNCTION__, array());
 
   if (empty($tiles_options)) {
@@ -626,8 +633,6 @@ function tiles_get_tile_types_options() {
       'blocks' => array(),
       'bean types' => array(),
     );
-
-    $tiles = tiles_get_tile_types();
 
     // Add labels to blocks.
     foreach ($tiles['blocks'] as $slug) {
