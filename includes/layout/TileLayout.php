@@ -235,8 +235,8 @@ class TileLayout extends Entity {
     $default_breakpoint = tiles_get_default_breakpoint();
     foreach ($this->sortedBlocks as $region => $blocks) {
       uasort($this->sortedBlocks[$region], function($a, $b) {
-        $a_weight = (is_array($a) && isset($a->weight)) ? $a->weight : 0;
-        $b_weight = (is_array($b) && isset($b->weight)) ? $b->weight : 0;
+        $a_weight = (is_object($a) && isset($a->weight)) ? $a->weight : 0;
+        $b_weight = (is_object($b) && isset($b->weight)) ? $b->weight : 0;
         if ($a_weight == $b_weight) {
           return 0;
         }

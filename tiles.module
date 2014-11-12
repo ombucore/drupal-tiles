@@ -882,6 +882,22 @@ function tiles_get_default_breakpoint() {
  *   The container object.
  */
 function tiles_get_container($type = 'region') {
+  $containers = tiles_get_containers();
+
+  if (isset($containers[$type]) && class_exists($containers[$type])) {
+    return new $containers[$type];
+  }
+
+  return FALSE;
+}
+
+/**
+ * Returns a list of tiles containers provided by hook_tiles_container_info().
+ *
+ * @return array
+ *   Array of hook info from hook_tiles_container_info().
+ */
+function tiles_get_containers() {
   $containers = &drupal_static(__FUNCTION__, array());
 
   if (empty($containers)) {
@@ -891,11 +907,7 @@ function tiles_get_container($type = 'region') {
     drupal_alter('tiles_container_info', $containers);
   }
 
-  if (isset($containers[$type]) && class_exists($containers[$type])) {
-    return new $containers[$type];
-  }
-
-  return FALSE;
+  return $containers;
 }
 
 /**
@@ -1046,11 +1058,18 @@ function _tiles_js_init() {
     drupal_add_css(drupal_get_path('module', 'tiles') . '/css/tiles.css');
     drupal_add_js(drupal_get_path('module', 'tiles') . '/js/tiles.js');
 
+    // Build a list for all available tiles containers for use in region
+    // selectors.
+    $type_selectors = join(',', array_map(function($selector) {
+      return '[data-type="' . $selector . '"]';
+    }, array_keys(tiles_get_containers())));
+
     $settings = array(
       'tiles' => array(
         'breakpoints' => tiles_get_breakpoints(),
         'steps' => tiles_get_steps(),
         'stepsKeys' => array_keys(tiles_get_steps()),
+        'typeSelectors' => $type_selectors,
       ),
     );
     $settings['tiles']['selector'] = current_path();

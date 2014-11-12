@@ -46,6 +46,10 @@
    */
 
   Tile = function(domNode) {
+    // @todo: this should really happen elsewhere, but not sure where else since
+    // Drupal.settings needs to be fully populated.
+    this.selector.region = Drupal.settings.tiles.typeSelectors;
+
     $d = $(domNode);
     this.domNode = $d.attr('data-type') === 'block' ? $d : $d.closest(this.selector.tile);
     // Close the contextual links.
@@ -62,7 +66,7 @@
 
   Tile.prototype.selector = {
     tile: '.tile',
-    region: '[data-type="region"],[data-type="section"]',
+    region: '',
     moveLink: '.contextual-links .block-arrange a',
     resizeLink: '.contextual-links .block-set-width a',
     visibilityLink: '.contextual-links .block-set-visibility a'
