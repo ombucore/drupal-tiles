@@ -46,7 +46,7 @@ function tiles_add_form($form, &$form_state, $type = 'region', $selector = NULL)
       '#options' => $regions,
       '#description' => t('Choose a region for the block. Only regions where
       you can add blocks are listed.'),
-      '#default_value' => in_array('content', $regions) ? 'content' : key($regions),
+      '#default_value' => key_exists('content', $regions) ? 'content' : key($regions),
     );
     // Hide regions if only one option.
     if (count($regions) <= 1) {
