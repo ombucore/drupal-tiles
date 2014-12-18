@@ -422,9 +422,24 @@ function tiles_node_update_index($node) {
   $layout = $container->getLayout('node/' . $node->nid);
   if ($layout) {
     $content = tiles_index_layout($layout);
+    $content = drupal_render($content);
   }
 
   return $content;
+}
+
+/**
+ * Implements hook_node_view().
+ */
+function tiles_node_view($node, $view_mode, $langcode) {
+  // Add indexable blocks to nodes during search view.
+  if ($view_mode == 'search_result') {
+    $container = tiles_get_container('region');
+    $layout = $container->getLayout('node/' . $node->nid);
+    if ($layout) {
+      $node->content['tiles_build'] = tiles_index_layout($layout);
+    }
+  }
 }
 
 /**
@@ -911,10 +926,10 @@ function tiles_get_containers() {
 }
 
 /**
- * Return search indexable content from tiles layout.
+ * Return search indexable render array from tiles layout.
  */
 function tiles_index_layout(TileLayout $layout) {
-  $content = '';
+  $content = array();
 
   foreach ($layout->getAllSortedBlocks() as $region => $blocks) {
     $render = $layout->getRenderBlocks($region);
@@ -923,8 +938,13 @@ function tiles_index_layout(TileLayout $layout) {
       if (empty($block['#block']->indexable)) {
         unset($render[$key]);
       }
+      else {
+        // Remove contextual links, since the text will show up in search
+        // results.
+        unset($render[$key]['#contextual_links']);
+      }
     }
-    $content .= drupal_render($render);
+    $content[] = $render;
   }
 
   return $content;
