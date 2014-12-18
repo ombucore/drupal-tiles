@@ -6,10 +6,12 @@
  */
 
 class TilesRegionContainer extends TilesContainer {
+  protected $container = 'region';
+
   /**
    * Implements parent:getRegions().
    */
-  public function getRegions($context_name = '') {
+  public function getRegions() {
     $theme = variable_get('theme_default', NULL);
 
     // Allow default theme to define which regions are available for tiles to be
@@ -28,7 +30,7 @@ class TilesRegionContainer extends TilesContainer {
    * Implements parent:renderManifest().
    */
   protected function renderManifest($page) {
-    $params = json_decode(file_get_contents('php://input'));
+    $params = $this->getManifest();
 
     // Build up proper regions.
     $this->prerenderPage($page);
@@ -39,12 +41,14 @@ class TilesRegionContainer extends TilesContainer {
     // Pull out old build array before blocks have been added to rows.
     $region = $region['#original'];
     foreach ($params->blocks as $block) {
-      $region[$block->module . '_' . $block->delta]['#weight'] = $block->weight;
-      $region[$block->module . '_' . $block->delta]['#block']->width = $block->width;
+      $block_key = $block->module . '_' . $block->delta;
+      $region[$block_key]['#weight'] = $block->weight;
+      $region[$block_key]['#block']->width = $block->width;
+      $region[$block_key]['#block']->breakpoints = (array) $block->breakpoints;
     }
 
     // Rebuild blocks into tile rows.
-    tiles_region_wrap($region);
+    $this->wrapRegion($region);
 
     print drupal_render($region);
   }

@@ -6,8 +6,7 @@ php = 5.1
 
 verison = 7.x-0.2
 
-dependencies[] = context
-
-files[] = plugins/tiles_context_block_reaction.inc
-files[] = includes/TilesContainer.php
-files[] = includes/TilesRegionContainer.php
+files[] = includes/layout/TileLayout.php
+files[] = includes/layout/TileLayoutController.php
+files[] = includes/container/TilesContainer.php
+files[] = includes/container/TilesRegionContainer.php

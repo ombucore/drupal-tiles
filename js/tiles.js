@@ -24,6 +24,19 @@
           block.setResizable();
         });
       });
+
+      $(Tile.prototype.selector.visibilityLink, context).once('block-visibility', function() {
+        $(this).click(function(e) {
+          e.preventDefault();
+          e.stopPropagation();
+          $(e.target).blur();
+          if ($(e.target).closest(Tile.prototype.selector.tile).hasClass('dragging')) {
+            return;
+          }
+          block = new Tile(e.target);
+          block.setVisibility();
+        });
+      });
     }
   };
 
@@ -33,6 +46,10 @@
    */
 
   Tile = function(domNode) {
+    // @todo: this should really happen elsewhere, but not sure where else since
+    // Drupal.settings needs to be fully populated.
+    this.selector.region = Drupal.settings.tiles.typeSelectors;
+
     $d = $(domNode);
     this.domNode = $d.attr('data-type') === 'block' ? $d : $d.closest(this.selector.tile);
     // Close the contextual links.
@@ -41,13 +58,18 @@
     this.module = this.domNode.attr('data-module');
     this.delta = this.domNode.attr('data-delta');
     this.width = parseInt(this.domNode.attr('data-width'), 10);;
+    this.breakpoints = [];
+    for (var key in Drupal.settings.tiles.breakpoints) {
+      this.breakpoints[key] = parseInt(this.domNode.attr('data-width-' + key), 10);
+    }
   };
 
   Tile.prototype.selector = {
     tile: '.tile',
-    region: '[data-type="region"],[data-type="section"]',
+    region: '',
     moveLink: '.contextual-links .block-arrange a',
-    resizeLink: '.contextual-links .block-set-width a'
+    resizeLink: '.contextual-links .block-set-width a',
+    visibilityLink: '.contextual-links .block-set-visibility a'
   };
 
   Tile.prototype.setDraggable = function() {
@@ -146,7 +168,7 @@
     var region = this.region.attr('data-name');
     var manifest = {
       region: region,
-      activeContext: this.region.attr('data-context') ? this.region.attr('data-context') : Drupal.settings.tiles.active_context,
+      selector: this.region.attr('data-tiles-selector') ? this.region.attr('data-tiles-selector') : Drupal.settings.tiles.selector,
       type: this.region.attr('data-type'),
       blockIndex: {},
       blocks: []
@@ -161,13 +183,18 @@
         return;
       }
       manifest.blockIndex[module + '-' + delta] = weight;
-      manifest.blocks.push({
+      var block = {
         module: module,
         delta: delta,
         region: region,
         width: parseInt($t.attr('data-width'), 10),
         weight: weight
-      });
+      }
+      block.breakpoints = {};
+      for (var key in Drupal.settings.tiles.breakpoints) {
+        block.breakpoints[key] = parseInt($t.attr('data-width-' + key), 10);
+      }
+      manifest.blocks.push(block);
       weight++;
     });
     return manifest;
@@ -209,6 +236,9 @@
       url: '/admin/tiles-save-tiles',
       data: JSON.stringify(manifest),
       dataType: 'json',
+      beforeSend: function(xhr) {
+        xhr.setRequestHeader('X-TILES', manifest.type);
+      },
       success: $.proxy(this.saveHandleSuccess, this),
       error: $.proxy(this.saveHandleError, this)
     });
@@ -236,6 +266,20 @@
     this.domNode.removeClass('resizing');
     $('body').removeClass('resizing');
     this.removeResizeOverlay();
+    return this;
+  };
+
+  Tile.prototype.setVisibility = function() {
+    this.domNode.addClass('resizing');
+    $('body').addClass('resizing');
+    this.addVisibilityOverlay();
+    return this;
+  };
+
+  Tile.prototype.unsetVisibility = function() {
+    this.domNode.removeClass('resizing');
+    $('body').removeClass('resizing');
+    this.removeVisibilityOverlay();
     return this;
   };
 
@@ -269,6 +313,35 @@
     return this;
   };
 
+  Tile.prototype.addVisibilityOverlay = function() {
+    // Prevent irresponsible js plugins (twitter I'm looking at you) from using
+    // document.write after a block is moved. Using document.write after a page
+    // load overwrites the whole dom.
+    document.write = function() {};
+
+    var overlayContent = '<div class="visibility-options">';
+
+    for (var key in Drupal.settings.tiles.breakpoints) {
+      var checked = (this.breakpoints[key] > 0) ? ' checked' : '';
+      overlayContent += '<div class="checkbox">';
+      overlayContent += '<label>';
+      overlayContent += '<input name="' + key + '" id="breakpoint-' + key + '" type="checkbox" class="visibility"' + checked + '>';
+      overlayContent += Drupal.settings.tiles.breakpoints[key] + '</label>';
+      overlayContent += '</div>';
+    }
+
+    overlayContent += '</div>';
+    overlayContent += '<div class="save-cancel-wrapper">';
+    overlayContent += '<button class="save">Save</button>';
+    overlayContent += '<span class="cancel">Cancel</span>';
+    overlayContent += '</div>';
+    this.domNode.prepend('<div class="tile-overlay"><div class="inner"><div class="control-wrapper">' + overlayContent + '</div></div></div>');
+    $('.visibility', this.domNode).change($.proxy(this, 'visibilitySelect'));
+    $('.cancel', this.domNode).click($.proxy(this, 'resizeCancel'));
+    $('.save', this.domNode).click($.proxy(this, 'saveVisibility'));
+    return this;
+  };
+
   Tile.prototype.widthPlus = function(e) {
     var manifest = this.regionManifest();
     var tile_index = manifest.blockIndex[this.module + '-' + this.delta];
@@ -284,6 +357,16 @@
 
     this.setInProgress();
     manifest.blocks[tile_index].width = new_width;
+
+    // Set all breakpoints that aren't set to hidden to new width. This should
+    // be altered once tiles has the ability to set the width on
+    // a per-breakpoint basis.
+    for (var key in Drupal.settings.tiles.breakpoints) {
+      if (manifest.blocks[tile_index].breakpoints[key] != 0) {
+        manifest.blocks[tile_index].breakpoints[key] = new_width;
+      }
+    }
+
     this.requestRegion(manifest, $.proxy(function() {
       $("[data-module='" + this.module + "'][data-delta='" + this.delta + "'] " + this.selector.resizeLink + ':eq(0)').click();
     }, this));
@@ -306,6 +389,16 @@
 
     this.setInProgress();
     manifest.blocks[tile_index].width = new_width;
+
+    // Set all breakpoints that aren't set to hidden to new width. This should
+    // be altered once tiles has the ability to set the width on
+    // a per-breakpoint basis.
+    for (var key in Drupal.settings.tiles.breakpoints) {
+      if (manifest.blocks[tile_index].breakpoints[key] != 0) {
+        manifest.blocks[tile_index].breakpoints[key] = new_width;
+      }
+    }
+
     this.requestRegion(manifest, $.proxy(function() {
       $("[data-module='" + this.module + "'][data-delta='" + this.delta + "'] " + this.selector.resizeLink + ':eq(0)').click();
     }, this));
@@ -328,10 +421,36 @@
 
     this.setInProgress();
     manifest.blocks[tile_index].width = new_width;
+
+    // Set all breakpoints that aren't set to hidden to new width. This should
+    // be altered once tiles has the ability to set the width on
+    // a per-breakpoint basis.
+    for (var key in Drupal.settings.tiles.breakpoints) {
+      if (manifest.blocks[tile_index].breakpoints[key] != 0) {
+        manifest.blocks[tile_index].breakpoints[key] = new_width;
+      }
+    }
+
     this.requestRegion(manifest, $.proxy(function() {
       $("[data-module='" + this.module + "'][data-delta='" + this.delta + "'] " + this.selector.resizeLink + ':eq(0)').click();
     }, this));
   };
+
+  Tile.prototype.visibilitySelect = function(e) {
+    for (var key in Drupal.settings.tiles.breakpoints) {
+      if (!$('input[name="' + key + '"]', this.domNode).is(':checked')) {
+        this.domNode.attr('data-width-' + key, 0);
+      }
+      else {
+        this.domNode.attr('data-width-' + key, this.domNode.attr('data-width'));
+      }
+    }
+  };
+
+  Tile.prototype.saveVisibility = function(e) {
+    this.requestRegion(this.regionManifest());
+    this.saveManifest();
+  }
 
   Tile.prototype.removeResizeOverlay = function() {
     $('.tile-overlay', this.domNode).remove();
