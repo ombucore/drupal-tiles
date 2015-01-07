@@ -87,6 +87,10 @@ class TileLayout extends Entity {
       $block->width = tiles_get_max_step();
     }
 
+    if (!isset($block->indexable)) {
+      $block->indexable = tiles_get_indexable($block->module, $block->delta, $this->tid);
+    }
+
     $this->blocks[] = $block;
     $this->sortedBlocks = NULL;
     $this->blockInfo = array();
@@ -191,6 +195,7 @@ class TileLayout extends Entity {
           'breakpoint',
           'weight',
           'width',
+          'indexable',
         ));
       foreach ($this->blocks as $block) {
         $query->values(array(
@@ -201,6 +206,7 @@ class TileLayout extends Entity {
           'breakpoint' => $block->breakpoint,
           'weight' => $block->weight,
           'width' => $block->width,
+          'indexable' => (int) $block->indexable,
         ));
       }
       $query->execute();

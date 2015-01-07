@@ -368,9 +368,16 @@ function tiles_contextual_links_view_alter(&$element, $items) {
     }
 
     // Alter the bean edit link to pass in current tile layout in order to get
-    // the proper indexable state.
+    // the proper indexable state. Recent versions of bean_block_view() adds
+    // a contextual link directly to the edit page, which prevents the correct
+    // contextual link id from being created (bean- instead of bean-edit). Need
+    // to check for both to handle both versions of bean.module.
+    // @see https://www.drupal.org/node/1691482#comment-8427861
     if (isset($element['#links']['bean-edit']) && isset($element['#element']['#block']->tid)) {
       $element['#links']['bean-edit']['query']['tid'] = $element['#element']['#block']->tid;
+    }
+    if (isset($element['#links']['bean-']) && isset($element['#element']['#block']->tid)) {
+      $element['#links']['bean-']['query']['tid'] = $element['#element']['#block']->tid;
     }
 
     // Add block type to links.
@@ -765,7 +772,7 @@ function tiles_get_indexable($module, $delta, $tid) {
     ':delta' => $delta,
   ))->fetchField();
 
-  if ($indexable) {
+  if ($indexable !== FALSE) {
     return (bool) $indexable;
   }
 
