@@ -501,8 +501,8 @@ function tiles_form_bean_form_alter(&$form, $form_state, $form_id, $layout = NUL
 
   $form['indexable'] = array(
     '#type' => 'checkbox',
-    '#title' => t('Add to page search index'),
-    '#description' => t('Check to include this block content when searching for the page this block is a part of.'),
+    '#title' => t('Include this block in the search index'),
+    '#description' => t("If checked, the content of this block will be a part of the search index entry for this block's page."),
     '#access' => user_access('set tile indexable status'),
     '#default_value' => isset($indexable) ? $indexable : FALSE,
     '#weight' => 10,
