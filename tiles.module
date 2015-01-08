@@ -262,9 +262,11 @@ function tiles_page_alter(&$page) {
     $container->wrapRegion($page[$region_key]);
   }
 
-  // Add breakpoints indicator. Don't show when on a media overlay.
+  // Add breakpoints indicator. Don't show when on a media overlay or if there
+  // is only one breakpoint.
   if (user_access('arrange tiles') && $page['#theme'] != 'media_dialog_page'
     && !path_is_admin(current_path())
+    && count(tiles_get_breakpoints()) > 1
   ) {
     $page['page_bottom']['breakpoints_indicator'] = array(
       '#theme' => 'breakpoints_indicator',
