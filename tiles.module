@@ -523,9 +523,7 @@ function tiles_form_bean_form_submit($form, &$form_state) {
 
   // Attempt to mark destination path from layout as needing reindexing from
   // solr. Currently only supports region layouts (with path).
-  if ($form_state['values']['indexable']) {
-    tiles_indexable_mark($layout);
-  }
+  tiles_indexable_mark($layout);
 }
 
 /**
