@@ -1,3 +1,5 @@
+@color-green: rgb(0, 100, 0);
+
 /* Basic CSS3 Mixins (not using Toolkit to keep this independent of submodules) PS NO IE SUPPORT!! */
 .gradient(@start: #333333, @stop: #999999) {
   background:@start;
@@ -29,7 +31,7 @@
   height: 100%;
   width: 100%;
   background-color: #646464;
-  background-color: rgba(100, 100, 100, 0.9);
+  background-color: fade(@color-green, 80);
   .inner { /* Vertical Centering */
     display: table;
     width: 100%;
@@ -134,9 +136,73 @@
 }
 
 // hilights all regions during dragging
-// TODO: only the region of the dragging block should be hilighted
-.dragging div[data-type='region'] {
-  border: 2px dotted green;
+[data-type="region"] {
+  position: relative;
+
+  &.dragging {
+    z-index: 1001;
+  }
+}
+
+.region-overlay {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border: 1px dotted black;
+  border: 1px solid #ddd;
+  background-color: fade(#eee, 90);
+
+  .name {
+    @label-height: 34px;
+    @label-background-color: rgb(100, 100, 100);
+    display: block;
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: @label-height;
+    padding: 0 0.75em;
+    font-size: 12px;
+    line-height: @label-height;
+    color: lighten(@label-background-color, 50);
+    background-color: @label-background-color;
+
+    &:before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 100%;
+      bottom: 0;
+      width: 0;
+      height: 0;
+      border-style: solid;
+      border-width: @label-height / 2 0 @label-height / 2 @label-height / 4;
+      border-color: transparent transparent transparent @label-background-color;
+    }
+  }
+
+  [class^="col-"] [data-type="region"] > & {
+    left: -15px;
+    right: -15px;
+  }
+
+  [data-type="region"].dragging > & {
+    background-color: transparent;
+    border-color: @color-green;
+    outline: 15px solid fade(@color-green, 30);
+
+    .name {
+      font-size: 16px;
+      color: white;
+      background-color: @color-green;
+
+      &:before {
+        border-left-color: @color-green;
+      }
+    }
+  }
 }
 
 .resizing.tile {

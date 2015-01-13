@@ -74,15 +74,19 @@
 
   Tile.prototype.setDraggable = function() {
     this.domNode.addClass('dragging');
+    this.region.addClass('dragging');
     $('body').addClass('dragging');
     this.addMoveOverlay();
+    this.addRegionOverlays();
     return this;
   };
 
   Tile.prototype.unsetDraggable = function() {
     this.domNode.removeClass('dragging');
+    this.region.removeClass('dragging');
     $('body').removeClass('dragging');
     this.removeMoveOverlay();
+    this.removeRegionOverlays();
     return this;
   };
 
@@ -99,6 +103,20 @@
   /**
    * TODO Use jQuery template
    */
+  Tile.prototype.addRegionOverlays = function() {
+    // Prevent irresponsible js plugins (twitter I'm looking at you) from using
+    // document.write after a block is moved. Using document.write after a page
+    // load overwrites the whole dom.
+    document.write = function() {};
+    var overlayContent = 'Hello world';
+    $(this.selector.region).each(function(i, el) {
+      if (!$(el).children('.region-overlay').length) {
+        $(el).append('<div class="region-overlay"><div class="inner"><div class="name">' + $(el).attr('data-name') + '</div></div></div>');
+      }
+    });
+    return this;
+  };
+
   Tile.prototype.addMoveOverlay = function() {
     // Prevent irresponsible js plugins (twitter I'm looking at you) from using
     // document.write after a block is moved. Using document.write after a page
@@ -119,6 +137,11 @@
 
   Tile.prototype.removeMoveOverlay = function() {
     $('.tile-overlay', this.domNode).remove();
+    return this;
+  };
+
+  Tile.prototype.removeRegionOverlays = function() {
+    $('.region-overlay', $(this.selector.region)).remove();
     return this;
   };
 
@@ -405,7 +428,7 @@
 
     return false;
   };
-  
+
   Tile.prototype.widthSelect = function(e) {
     var manifest = this.regionManifest();
     var tile_index = manifest.blockIndex[this.module + '-' + this.delta];
