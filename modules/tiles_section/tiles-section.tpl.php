@@ -11,7 +11,7 @@
  *
  */
 ?>
-<div class="<?php print $classes ?>" id="<?php print $id ?>">
+<div class="<?php print $classes ?>" id="<?php print $id ?>"<?php print $attributes ?>>
   <h2<?php if (!$title_visible): ?> class="element-invisible"<?php endif ?>><?php print $section_title ?></h2>
   <?php print render($title_suffix) ?>
   <div class="content" data-name="content" data-type="section" data-tiles-selector="<?php print $selector ?>">
