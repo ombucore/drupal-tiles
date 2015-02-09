@@ -24,6 +24,10 @@
   display: table-cell;
   width: 100%;
 }
+.visibility-options {
+  padding: 0 10px 20px 40px;
+  color: white;
+}
 .overlay-open .tile-overlay {
   z-index: 499;
 }

@@ -15,23 +15,22 @@
  * @param $type
  *   The type of tiles container requesting the tiles add form. Defaults to the
  *   tiles.module provided container of 'region'.
- * @param $context_name
- *   The name of the context in which to add tile to. If not present, a context
- *   will be created (or loaded if already present) based on the destination
- *   path.
+ * @param $selector
+ *   The selector to use for layout. If empty, will use destination path.
  */
-function tiles_add_form($form, &$form_state, $type = 'region', $context_name = '') {
+function tiles_add_form($form, &$form_state, $type = 'region', $selector = NULL) {
   if (empty($form_state['next_step'])) {
-    $form['context'] = array(
-      '#type' => 'value',
-      '#value' => $context_name,
-    );
-    $form['destination'] = array(
-      '#type' => 'value',
-      '#value' => $_GET['destination'],
-    );
+    if (!$type) {
+      $type = 'region';
+    }
+    $container = tiles_get_container($type);
 
-    $tile_options = tiles_get_tile_types_options();
+    if (!$selector) {
+      $selector = $_GET['destination'];
+    }
+    $form_state['layout'] = $container->getLayout($selector);
+
+    $tile_options = tiles_get_tile_types_options($container->getTileTypes());
     $form['block_type'] = array(
       '#type' => 'select',
       '#title' => t('Block Type'),
@@ -40,17 +39,14 @@ function tiles_add_form($form, &$form_state, $type = 'region', $context_name = '
       '#required' => TRUE,
     );
 
-    // Type can still come in as an empty string, so default parameter won't
-    // work.
-    $type = $type ? $type : 'region';
-    $regions = _tiles_get_regions($type, $context_name);
+    $regions = $container->getRegions();
     $form['region'] = array(
       '#title' => t('Region'),
       '#type' => 'select',
       '#options' => $regions,
       '#description' => t('Choose a region for the block. Only regions where
       you can add blocks are listed.'),
-      '#default_value' => in_array('content', $regions) ? 'content' : key($regions),
+      '#default_value' => key_exists('content', $regions) ? 'content' : key($regions),
     );
     // Hide regions if only one option.
     if (count($regions) <= 1) {
@@ -95,25 +91,17 @@ function tiles_add_form_next($form, &$form_state) {
   }
   // Save static block to selected region in the active page context.
   else {
-    // Get the correct context.
-    if ($form_state['values']['context']) {
-      $context = tiles_get_context('context', $form_state['values']['context']);
-    }
-    else {
-      $context = tiles_get_context('path', $form_state['values']['destination']);
-    }
+    $layout = $form_state['layout'];
 
     // Generate proper tiles array.
     list($module, $delta) = explode('__', $form_state['values']['block_type']);
-    $tiles = array(
-      array(
-        'module' => $module,
-        'delta' => $delta,
-        'region' => $form_state['values']['region'],
-        'weight' => 50,
-      ),
+    $block = array(
+      'module' => $module,
+      'delta' => $delta,
+      'region' => $form_state['values']['region'],
+      'weight' => 50,
     );
-    tiles_assign_tiles($context, $tiles);
+    $layout->addBlock($block);
 
     drupal_set_message(t('Block %title added', array('%title' => $form['block_type']['#options'][$form_state['values']['block_type']])));
   }
@@ -173,24 +161,23 @@ function tiles_add_form_add_submit($form, &$form_state) {
   watchdog('bean', '@type: added %title.', $watchdog_args, WATCHDOG_NOTICE, $bean->viewURL());
   drupal_set_message(t('@type %title has been created.', $t_args));
 
-  // Save bean to selected region in the active page context.
-  if ($form_state['type_values']['context']) {
-    $context = tiles_get_context('context', $form_state['type_values']['context']);
-  }
-  else {
-    $context = tiles_get_context('path', $form_state['type_values']['destination']);
-  }
-
-  // Generate proper tiles array.
-  $tiles = array(
-    array(
-      'module' => 'bean',
-      'delta' => $bean->delta,
-      'region' => $form_state['type_values']['region'],
-      'weight' => 50,
-    ),
+  $layout = $form_state['layout'];
+  $block = array(
+    'module' => 'bean',
+    'delta' => $bean->delta,
+    'region' => $form_state['type_values']['region'],
+    'weight' => 50,
   );
-  tiles_assign_tiles($context, $tiles);
+  $layout->addBlock($block);
+  $layout->save();
+
+  if (isset($form_state['values']['indexable'])) {
+    $indexable = $form_state['values']['indexable'];
+    tiles_set_indexable('bean', $bean->delta, $indexable, $layout->tid);
+    if ($indexable) {
+      tiles_indexable_mark($layout);
+    }
+  }
 }
 
 /**
