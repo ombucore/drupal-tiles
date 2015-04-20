@@ -20,7 +20,7 @@
       </div>
     </div>
   </div>
-  <div class="content" data-name="content" data-type="section" data-tiles-selector="<?php print $selector ?>">
+  <div class="container content" data-name="content" data-type="section" data-tiles-selector="<?php print $selector ?>">
     <?php print render($tiles) ?>
   </div>
   <div class="container footer">
