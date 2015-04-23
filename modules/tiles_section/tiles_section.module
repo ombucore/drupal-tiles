@@ -427,7 +427,16 @@ function tiles_section_add_tile($node, $section) {
   // Keep user in overlay.
   $url = 'admin/tiles/add/section/' . $selector;
   if (module_exists('overlay') && overlay_get_mode() == 'child') {
-    overlay_close_dialog($_GET['destination'], array('fragment' => 'overlay=' . urlencode($url . '?destination=' . $_GET['destination'])));
+    // Fix Safari bug that improperly redirects destination if destination is
+    // the front page (e.g. node/1 will be redirected to / but loose overlay
+    // context).
+    if ($_GET['destination'] == variable_get('site_frontpage', '')) {
+      $_GET['destination'] = '<front>';
+    }
+    overlay_close_dialog($_GET['destination'], array(
+      'fragment' => 'overlay=' . urlencode($url . '?destination=' . $_GET['destination']),
+      'absolute' => TRUE,
+    ));
   }
   else {
     drupal_goto($url, array('query' => array('destination' => $_GET['destination'])));
