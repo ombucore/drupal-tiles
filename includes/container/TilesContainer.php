@@ -174,6 +174,9 @@ abstract class TilesContainer {
         $layout->addBlock($block);
       }
 
+      // Clear caches.
+      cache_clear_all();
+
       return $layout->save();
     }
   }
