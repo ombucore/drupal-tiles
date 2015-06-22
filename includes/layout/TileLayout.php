@@ -83,6 +83,7 @@ class TileLayout extends Entity {
       $block->breakpoint = tiles_get_default_breakpoint();
     }
 
+    // Set default width to 100%.
     if (!isset($block->width)) {
       $block->width = tiles_get_max_step();
     }
@@ -185,7 +186,8 @@ class TileLayout extends Entity {
       ->condition('tid', $this->tid)
       ->execute();
 
-    if ($this->blocks) {
+    $this->sortBlocks();
+    if ($this->sortedBlocks) {
       $query = db_insert('tile_layout_blocks')
         ->fields(array(
           'tid',
@@ -197,17 +199,20 @@ class TileLayout extends Entity {
           'width',
           'indexable',
         ));
-      foreach ($this->blocks as $block) {
-        $query->values(array(
-          'tid' => $this->tid,
-          'module' => $block->module,
-          'delta' => $block->delta,
-          'region' => $block->region,
-          'breakpoint' => $block->breakpoint,
-          'weight' => $block->weight,
-          'width' => $block->width,
-          'indexable' => (int) $block->indexable,
-        ));
+      foreach ($this->sortedBlocks as $region => $blocks) {
+        $weight = 0;
+        foreach ($blocks as $block) {
+          $query->values(array(
+            'tid' => $this->tid,
+            'module' => $block->module,
+            'delta' => $block->delta,
+            'region' => $block->region,
+            'breakpoint' => $block->breakpoint,
+            'weight' => $weight++,
+            'width' => $block->width,
+            'indexable' => (int) $block->indexable,
+          ));
+        }
       }
       $query->execute();
     }

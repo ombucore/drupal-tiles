@@ -163,6 +163,9 @@ abstract class TilesContainer {
       foreach ($manifest->blocks as $block) {
         foreach ($block->breakpoints as $key => $width) {
           $new_block = clone $block;
+          // @todo: This needs to be properly integrated into an array in order
+          // for TileLayout::save() to work correctly.
+          $new_block->breakpoints = (array) $new_block->breakpoints;
           $new_block->breakpoint = $key;
           $new_block->width = $width;
           $blocks[] = $new_block;
