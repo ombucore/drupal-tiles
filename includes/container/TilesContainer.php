@@ -30,7 +30,13 @@ abstract class TilesContainer {
   public function getLayout($selector) {
     $layouts = entity_get_controller('tile_layout')->loadBySelector($selector, $this->container);
     if (!empty($layouts)) {
-      return array_shift($layouts);
+      $layout = array_shift($layouts);
+      if ($this->hasAccess($layout)) {
+        return $layout;
+      }
+      else {
+        return FALSE;
+      }
     }
     else {
       $layout = entity_create('tile_layout', array(
@@ -64,6 +70,19 @@ abstract class TilesContainer {
    */
   public function getTileTypes() {
     return tiles_get_tile_types();
+  }
+
+  /**
+   * Checks if current user has access to view layout.
+   *
+   * @param TileLayout $layout
+   *   The tile layout holding block references.
+   *
+   * @return bool
+   *   TRUE if user has access to view layout, meaning blocks should be visible.
+   */
+  public function hasAccess($layout) {
+    return TRUE;
   }
 
   /**

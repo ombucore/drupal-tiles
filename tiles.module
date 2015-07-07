@@ -225,7 +225,9 @@ function tiles_theme() {
 function tiles_page_build(&$page) {
   $container = tiles_get_container('region');
   $layout = $container->getLayout(current_path());
-  $container->buildPage($page, $layout);
+  if ($layout) {
+    $container->buildPage($page, $layout);
+  }
 
   // Add block weight to all blocks.
   foreach (element_children($page) as $region_key) {

@@ -9,6 +9,15 @@ class TilesRegionContainer extends TilesContainer {
   protected $container = 'region';
 
   /**
+   * Implements parent::hasAccess().
+   */
+  public function hasAccess($layout) {
+    // Tie layout access to menu access, since TilesRegionContainer is tied to
+    // path.
+    return drupal_valid_path($layout->selector);
+  }
+
+  /**
    * Implements parent:getRegions().
    */
   public function getRegions() {
