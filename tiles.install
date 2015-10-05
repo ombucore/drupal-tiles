@@ -91,6 +91,12 @@ function tiles_schema() {
         'not null' => TRUE,
         'default' => 0,
       ),
+      'offset' => array(
+        'description' => 'The grid offset of block.',
+        'type' => 'int',
+        'unsigned' => FALSE,
+        'not null' => TRUE,
+      ),
     ),
     'foreign keys' => array(
       'tid' => array(
@@ -190,4 +196,17 @@ function tiles_update_7003() {
   if (db_query("SELECT COUNT(*) FROM {tiles_width}")->fetchField() == 0) {
     db_drop_table('tiles_width');
   }
+}
+
+/**
+ * Add new indexable column to tiles width table.
+ */
+function tiles_update_7004() {
+  db_add_field('tiles_layout_blocks', 'offset', array(
+    'description' => 'The grid offset of a block.',
+    'type' => 'int',
+    'unsigned' => FALSE,
+    'not null' => TRUE,
+    'default' => 0,
+  ));
 }

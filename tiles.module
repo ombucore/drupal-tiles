@@ -940,8 +940,8 @@ function tiles_get_containers() {
 function tiles_index_layout(TileLayout $layout) {
   $content = array();
 
-  foreach ($layout->getAllSortedBlocks() as $region => $blocks) {
-    $render = $layout->getRenderBlocks($region);
+  foreach ($layout->getAllSortedTiles() as $region => $blocks) {
+    $render = $layout->getRenderTiles($region);
     // Remove any block that isn't set to be indexable.
     foreach ($render as $key => $block) {
       if (empty($block['#block']->indexable)) {

@@ -97,7 +97,7 @@ abstract class TilesContainer {
     // Load all region content assigned via blocks.
     $regions = $this->getRegions();
     foreach (array_keys($regions) as $region) {
-      if ($blocks = $layout->getRenderBlocks($region)) {
+      if ($blocks = $layout->getRenderTiles($region)) {
 
         // Are the blocks already sorted.
         $blocks_sorted = TRUE;
