@@ -40,7 +40,7 @@ class Tile {
   /**
    * The weight of block.
    */
-  public $weight;
+  public $weight = 0;
 
   /**
    * The width of block.
@@ -55,16 +55,19 @@ class Tile {
   /**
    * The grid offset of block.
    */
-  public $offset;
+  public $offset = 0;
 
   /**
    * Constructor.
    */
   public function __construct() {
     // Set defaults.
-    $this->weight = 0;
-    $this->breakpoint = tiles_get_default_breakpoint();
-    $this->width = tiles_get_max_step();
+    if (!isset($this->breakpoint)) {
+      $this->breakpoint = tiles_get_default_breakpoint();
+    }
+    if (!isset($this->width)) {
+      $this->width = tiles_get_max_step();
+    }
   }
 
   /**
@@ -83,10 +86,42 @@ class Tile {
    *     - offset
    */
   public function loadUp($block = array()) {
+    $block = (array) $block;
+
     foreach (array_keys(get_object_vars($this)) as $property) {
       if (!empty($block[$property])) {
         $this->{$property} = $block[$property];
       }
     }
+  }
+
+  /**
+   * Save tile object into database.
+   */
+  public function save() {
+    $query = db_insert('tile_layout_blocks')
+      ->fields(array(
+        'tid',
+        'module',
+        'delta',
+        'region',
+        'breakpoint',
+        'weight',
+        'width',
+        'indexable',
+        'offset',
+      ))
+      ->values(array(
+        'tid' => $this->tid,
+        'module' => $this->module,
+        'delta' => $this->delta,
+        'region' => $this->region,
+        'breakpoint' => $this->breakpoint,
+        'weight' => $this->weight,
+        'width' => $this->width,
+        'indexable' => (int) $this->indexable,
+        'offset' => $this->offset,
+      ))
+      ->execute();
   }
 }

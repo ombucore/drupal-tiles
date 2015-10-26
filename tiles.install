@@ -96,6 +96,7 @@ function tiles_schema() {
         'type' => 'int',
         'unsigned' => FALSE,
         'not null' => TRUE,
+        'default' => 0,
       ),
     ),
     'foreign keys' => array(

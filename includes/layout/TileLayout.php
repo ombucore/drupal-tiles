@@ -190,7 +190,7 @@ class TileLayout extends Entity {
     // Save all tiles. In order to save tiles, clear out all existing tile
     // references for layout. This means that a layout always needs to have
     // tiles attached (which it does if loaded via entity_load()).
-    db_delete('tile_layout_tiles')
+    db_delete('tile_layout_blocks')
       ->condition('tid', $this->tid)
       ->execute();
 
@@ -199,6 +199,7 @@ class TileLayout extends Entity {
       foreach ($this->sortedTiles as $region => $tiles) {
         $weight = 0;
         foreach ($tiles as $tile) {
+          $tile->tid = $this->tid;
           $tile->weight = $weight++;
           $tile->save();
         }
