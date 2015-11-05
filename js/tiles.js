@@ -214,6 +214,7 @@
     var tile_index = manifest.blockIndex[this.module + '-' + this.delta];
     var tile_offset = this.offset;
     var steps = Drupal.settings.tiles.stepsKeys;
+    steps.unshift(0);
     var step_index = $.inArray(tile_offset, steps);
     var new_offset = steps[step_index - 1];
 

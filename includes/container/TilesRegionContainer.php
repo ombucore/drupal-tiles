@@ -54,6 +54,7 @@ class TilesRegionContainer extends TilesContainer {
       $region[$block_key]['#weight'] = $block->weight;
       $region[$block_key]['#block']->width = $block->width;
       $region[$block_key]['#block']->breakpoints = (array) $block->breakpoints;
+      $region[$block_key]['#block']->offset =  $block->offset;
     }
 
     // Rebuild blocks into tile rows.

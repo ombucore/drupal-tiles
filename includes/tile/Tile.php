@@ -55,7 +55,7 @@ class Tile {
   /**
    * The grid offset of block.
    */
-  public $offset = 0;
+  public $offset;
 
   /**
    * Constructor.
@@ -67,6 +67,9 @@ class Tile {
     }
     if (!isset($this->width)) {
       $this->width = tiles_get_max_step();
+    }
+    if (!isset($this->offset)) {
+      $this->offset = 0;
     }
   }
 
