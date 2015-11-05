@@ -64,6 +64,17 @@ function tiles_menu() {
     'weight' => -9,
   );
 
+  $items['admin/structure/block/manage/%/%/set_offset'] = array(
+    'title' => 'Offset',
+    'type' => MENU_LOCAL_TASK,
+    'context' => MENU_CONTEXT_INLINE,
+    'page callback' => '_tiles_width',
+    'page arguments' => array(4, 5),
+    'access callback' => 'tiles_access',
+    'access arguments' => array('offset', 4, 5),
+    'weight' => -9,
+  );
+
   /* Hide visibility until properly implemented.
    * For now, there's only one breakpoint, so doesn't make sense to expose menu.
   $items['admin/structure/block/manage/%/%/set_visibility'] = array(
@@ -238,6 +249,10 @@ function tiles_page_build(&$page) {
         if (!isset($block->width)) {
           $page[$region_key][$block_key]['#block']->width = tiles_get_width($block->module, $block->delta);
         }
+        if (!isset($block->offset)) {
+          // @todo: figure out a saner defaults for offsets.
+          $block->offset = 0;
+        }
       }
     }
   }
@@ -295,6 +310,7 @@ function tiles_preprocess_block(&$variables) {
     $variables['attributes_array']['data-module'] = $block->module;
     $variables['attributes_array']['data-delta'] = $block->delta;
     $variables['attributes_array']['data-width'] = $block->width;
+    $variables['attributes_array']['data-offset'] = $block->offset;
 
     // Add widths for each of the breakpoints.
     $default_breakpoint = tiles_get_default_breakpoint();
@@ -940,8 +956,8 @@ function tiles_get_containers() {
 function tiles_index_layout(TileLayout $layout) {
   $content = array();
 
-  foreach ($layout->getAllSortedBlocks() as $region => $blocks) {
-    $render = $layout->getRenderBlocks($region);
+  foreach ($layout->getAllSortedTiles() as $region => $blocks) {
+    $render = $layout->getRenderTiles($region);
     // Remove any block that isn't set to be indexable.
     foreach ($render as $key => $block) {
       if (empty($block['#block']->indexable)) {

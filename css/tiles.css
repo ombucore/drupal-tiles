@@ -33,6 +33,7 @@
 }
 .dragging.tile {
   position: relative;
+  min-height: 200px;
 }
 .dragging.tile [class*=move] {
   background-image: url(img/sprite.png);
@@ -131,6 +132,7 @@
 }
 .resizing.tile {
   position: relative;
+  min-height: 200px;
 }
 .resizing.tile .width-minus,
 .resizing.tile .width-plus {
