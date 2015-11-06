@@ -231,7 +231,15 @@ abstract class TilesContainer {
       }
 
       $block = $region[$delta]['#block'];
-      $width = $block->width;
+      $width = $block->width + $block->offset;
+      while ($width > $max_cols_per_row || $block->width == 1) {
+        $block->width--;
+        $width = $block->width + $block->offset;
+
+        // @todo: for now set default breakpoint to same width. Need to revisit
+        // once breakpoint behavior gets flushed out,
+        $block->breakpoints['default'] = $block->width;
+      }
 
       if (($col_count + $width) <= $max_cols_per_row) {
         $col_count += $width;
