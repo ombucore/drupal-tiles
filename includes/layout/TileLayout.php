@@ -106,6 +106,13 @@ class TileLayout extends Entity {
   }
 
   /**
+   * Get all tiles.
+   */
+  public function getTiles() {
+    return $this->tiles;
+  }
+
+  /**
    * Get all sorted tiles.
    *
    * @return array
