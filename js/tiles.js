@@ -213,7 +213,7 @@
     var manifest = this.regionManifest();
     var tile_index = manifest.blockIndex[this.module + '-' + this.delta];
     var tile_offset = this.offset;
-    var steps = Drupal.settings.tiles.stepsKeys;
+    var steps = Drupal.settings.tiles.stepsKeys.slice();
     steps.unshift(0);
     var step_index = $.inArray(tile_offset, steps);
     var new_offset = steps[step_index - 1];
@@ -520,7 +520,7 @@
 
     return false;
   };
-  
+
   Tile.prototype.widthSelect = function(e) {
     var manifest = this.regionManifest();
     var tile_index = manifest.blockIndex[this.module + '-' + this.delta];
