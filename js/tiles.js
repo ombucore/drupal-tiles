@@ -192,11 +192,19 @@
     // load overwrites the whole dom.
     document.write = function() {};
 
-    var overlayContent = '<button class="move-left">Left</button>';
+    var overlayContent = '<select class="offset-menu">';
+    for (var i = 0; i <= Drupal.settings.tiles.stepsKeys.length; i++ ) {
+      var selected = (this.offset == i) ? ' selected' : '';
+      overlayContent += '<option value="' + i + '"' + selected + '>' + i + '</option>';
+    }
+
+    overlayContent += '</select>';
+    overlayContent += '<button class="move-left">Left</button>';
     overlayContent += '<button class="move-right">Right</button>';
     overlayContent += '<button class="save">Save</button>';
     overlayContent += '<span class="cancel">Cancel</span>';
     this.domNode.prepend('<div class="tile-overlay"><div class="inner"><div class="control-wrapper">' + overlayContent + '</div></div></div>');
+    $('select.offset-menu', this.domNode).change($.proxy(this, 'offsetSelect'));
     $('.move-left', this.domNode).click($.proxy(this,'offsetLeft'));
     $('.move-right', this.domNode).click($.proxy(this,'offsetRight'));
     $('.cancel', this.domNode).click($.proxy(this, 'offsetCancel'));
@@ -207,6 +215,36 @@
   Tile.prototype.removeOffsetOverlay = function() {
     $('.tile-overlay', this.domNode).remove();
     return this;
+  };
+
+  Tile.prototype.offsetSelect = function(e) {
+    var manifest = this.regionManifest();
+    var tile_index = manifest.blockIndex[this.module + '-' + this.delta];
+    var tile_offset = this.offset;
+    var new_offset = $('select option:selected', this.domNode).val();
+
+    if (new_offset === undefined) {
+      alert('This tile is already at the minimum offset.');
+      return false;
+    }
+
+    this.setInProgress();
+    manifest.blocks[tile_index].offset = new_offset;
+
+    // Set all breakpoints that aren't set to hidden to new offset. This should
+    // be altered once tiles has the ability to set the offset on
+    // a per-breakpoint basis.
+    // for (var key in Drupal.settings.tiles.breakpoints) {
+    //   if (manifest.blocks[tile_index].breakpoints[key] != 0) {
+    //     manifest.blocks[tile_index].breakpoints[key] = new_offset;
+    //   }
+    // }
+
+    this.requestRegion(manifest, $.proxy(function() {
+      $("[data-module='" + this.module + "'][data-delta='" + this.delta + "'] " + this.selector.offsetLink + ':eq(0)').click();
+    }, this));
+
+    return false;
   };
 
   Tile.prototype.offsetLeft = function(e) {
