@@ -192,10 +192,13 @@
     // load overwrites the whole dom.
     document.write = function() {};
 
+    var steps = Drupal.settings.tiles.steps;
+    steps[0] = '0%';
+
     var overlayContent = '<select class="offset-menu">';
     for (var i = 0; i <= Drupal.settings.tiles.stepsKeys.length; i++ ) {
       var selected = (this.offset == i) ? ' selected' : '';
-      overlayContent += '<option value="' + i + '"' + selected + '>' + i + '</option>';
+      overlayContent += '<option value="' + i + '"' + selected + '>' + steps[i] + '</option>';
     }
 
     overlayContent += '</select>';
