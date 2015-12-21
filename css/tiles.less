@@ -51,6 +51,7 @@
 
 .dragging.tile {
   position: relative;
+  min-height: 200px;
   [class*=move] {
     background-image: url(img/sprite.png);
     background-color: transparent;
@@ -63,6 +64,13 @@
     border: 0;
     padding: 0;
     border-radius: 0;
+  }
+  .offset-menu {
+    margin: -40px auto 0;
+    width: auto;
+    display: block;
+    font-size: 14px;
+    text-align: center;
   }
   .move-left {
     background-position: -1px -48px;
@@ -141,6 +149,7 @@
 
 .resizing.tile {
   position: relative;
+  min-height: 200px;
   .width-minus, .width-plus {
     background-color: transparent;
     position: absolute;

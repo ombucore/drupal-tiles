@@ -30,7 +30,13 @@ abstract class TilesContainer {
   public function getLayout($selector) {
     $layouts = entity_get_controller('tile_layout')->loadBySelector($selector, $this->container);
     if (!empty($layouts)) {
-      return array_shift($layouts);
+      $layout = array_shift($layouts);
+      if ($this->hasAccess($layout)) {
+        return $layout;
+      }
+      else {
+        return FALSE;
+      }
     }
     else {
       $layout = entity_create('tile_layout', array(
@@ -67,6 +73,19 @@ abstract class TilesContainer {
   }
 
   /**
+   * Checks if current user has access to view layout.
+   *
+   * @param TileLayout $layout
+   *   The tile layout holding block references.
+   *
+   * @return bool
+   *   TRUE if user has access to view layout, meaning blocks should be visible.
+   */
+  public function hasAccess($layout) {
+    return TRUE;
+  }
+
+  /**
    * Place blocks from a layout into regions.
    *
    * @param array $page
@@ -78,7 +97,7 @@ abstract class TilesContainer {
     // Load all region content assigned via blocks.
     $regions = $this->getRegions();
     foreach (array_keys($regions) as $region) {
-      if ($blocks = $layout->getRenderBlocks($region)) {
+      if ($blocks = $layout->getRenderTiles($region)) {
 
         // Are the blocks already sorted.
         $blocks_sorted = TRUE;
@@ -156,7 +175,7 @@ abstract class TilesContainer {
       $layout = $this->getLayout($manifest->selector);
 
       // Clear out any current blocks in passed region.
-      $layout->clearBlocks($manifest->region);
+      $layout->clearTiles($manifest->region);
 
       // Split blocks out by breakpoint.
       $blocks = array();
@@ -212,7 +231,15 @@ abstract class TilesContainer {
       }
 
       $block = $region[$delta]['#block'];
-      $width = $block->width;
+      $width = $block->width + $block->offset;
+      while ($width > $max_cols_per_row || $block->width == 1) {
+        $block->width--;
+        $width = $block->width + $block->offset;
+
+        // @todo: for now set default breakpoint to same width. Need to revisit
+        // once breakpoint behavior gets flushed out,
+        $block->breakpoints['default'] = $block->width;
+      }
 
       if (($col_count + $width) <= $max_cols_per_row) {
         $col_count += $width;

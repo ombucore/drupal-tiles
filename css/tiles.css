@@ -33,6 +33,7 @@
 }
 .dragging.tile {
   position: relative;
+  min-height: 200px;
 }
 .dragging.tile [class*=move] {
   background-image: url(img/sprite.png);
@@ -46,6 +47,13 @@
   border: 0;
   padding: 0;
   border-radius: 0;
+}
+.dragging.tile .offset-menu {
+  margin: -40px auto 0;
+  width: auto;
+  display: block;
+  font-size: 14px;
+  text-align: center;
 }
 .dragging.tile .move-left {
   background-position: -1px -48px;
@@ -131,6 +139,7 @@
 }
 .resizing.tile {
   position: relative;
+  min-height: 200px;
 }
 .resizing.tile .width-minus,
 .resizing.tile .width-plus {

@@ -25,6 +25,19 @@
         });
       });
 
+      $(Tile.prototype.selector.offsetLink, context).once('block-offset', function() {
+        $(this).click(function(e) {
+          e.preventDefault();
+          e.stopPropagation();
+          $(e.target).blur();
+          if ($(e.target).closest(Tile.prototype.selector.tile).hasClass('dragging')) {
+            return;
+          }
+          block = new Tile(e.target);
+          block.setOffset();
+        });
+      });
+
       $(Tile.prototype.selector.visibilityLink, context).once('block-visibility', function() {
         $(this).click(function(e) {
           e.preventDefault();
@@ -58,6 +71,7 @@
     this.module = this.domNode.attr('data-module');
     this.delta = this.domNode.attr('data-delta');
     this.width = parseInt(this.domNode.attr('data-width'), 10);;
+    this.offset = parseInt(this.domNode.attr('data-offset'), 10);;
     this.breakpoints = [];
     for (var key in Drupal.settings.tiles.breakpoints) {
       this.breakpoints[key] = parseInt(this.domNode.attr('data-width-' + key), 10);
@@ -69,6 +83,7 @@
     region: '',
     moveLink: '.contextual-links .block-arrange a',
     resizeLink: '.contextual-links .block-set-width a',
+    offsetLink: '.contextual-links .block-set-offset a',
     visibilityLink: '.contextual-links .block-set-visibility a'
   };
 
@@ -76,6 +91,13 @@
     this.domNode.addClass('dragging');
     $('body').addClass('dragging');
     this.addMoveOverlay();
+    return this;
+  };
+
+  Tile.prototype.setOffset = function() {
+    this.domNode.addClass('dragging');
+    $('body').addClass('dragging');
+    this.addOffsetOverlay();
     return this;
   };
 
@@ -164,6 +186,139 @@
     window.location.reload();
   };
 
+  Tile.prototype.addOffsetOverlay = function() {
+    // Prevent irresponsible js plugins (twitter I'm looking at you) from using
+    // document.write after a block is moved. Using document.write after a page
+    // load overwrites the whole dom.
+    document.write = function() {};
+
+    var steps = Drupal.settings.tiles.steps;
+    steps[0] = '0%';
+
+    var overlayContent = '<select class="offset-menu">';
+    for (var i = 0; i <= Drupal.settings.tiles.stepsKeys.length; i++ ) {
+      var selected = (this.offset == i) ? ' selected' : '';
+      overlayContent += '<option value="' + i + '"' + selected + '>' + steps[i] + '</option>';
+    }
+
+    overlayContent += '</select>';
+    overlayContent += '<button class="move-left">Left</button>';
+    overlayContent += '<button class="move-right">Right</button>';
+    overlayContent += '<button class="save">Save</button>';
+    overlayContent += '<span class="cancel">Cancel</span>';
+    this.domNode.prepend('<div class="tile-overlay"><div class="inner"><div class="control-wrapper">' + overlayContent + '</div></div></div>');
+    $('select.offset-menu', this.domNode).change($.proxy(this, 'offsetSelect'));
+    $('.move-left', this.domNode).click($.proxy(this,'offsetLeft'));
+    $('.move-right', this.domNode).click($.proxy(this,'offsetRight'));
+    $('.cancel', this.domNode).click($.proxy(this, 'offsetCancel'));
+    $('.save', this.domNode).click($.proxy(this, 'saveManifest'));
+    return this;
+  };
+
+  Tile.prototype.removeOffsetOverlay = function() {
+    $('.tile-overlay', this.domNode).remove();
+    return this;
+  };
+
+  Tile.prototype.offsetSelect = function(e) {
+    var manifest = this.regionManifest();
+    var tile_index = manifest.blockIndex[this.module + '-' + this.delta];
+    var tile_offset = this.offset;
+    var new_offset = $('select option:selected', this.domNode).val();
+
+    if (new_offset === undefined) {
+      alert('This tile is already at the minimum offset.');
+      return false;
+    }
+
+    this.setInProgress();
+    manifest.blocks[tile_index].offset = new_offset;
+
+    // Set all breakpoints that aren't set to hidden to new offset. This should
+    // be altered once tiles has the ability to set the offset on
+    // a per-breakpoint basis.
+    // for (var key in Drupal.settings.tiles.breakpoints) {
+    //   if (manifest.blocks[tile_index].breakpoints[key] != 0) {
+    //     manifest.blocks[tile_index].breakpoints[key] = new_offset;
+    //   }
+    // }
+
+    this.requestRegion(manifest, $.proxy(function() {
+      $("[data-module='" + this.module + "'][data-delta='" + this.delta + "'] " + this.selector.offsetLink + ':eq(0)').click();
+    }, this));
+
+    return false;
+  };
+
+  Tile.prototype.offsetLeft = function(e) {
+    var manifest = this.regionManifest();
+    var tile_index = manifest.blockIndex[this.module + '-' + this.delta];
+    var tile_offset = this.offset;
+    var steps = Drupal.settings.tiles.stepsKeys.slice();
+    steps.unshift(0);
+    var step_index = $.inArray(tile_offset, steps);
+    var new_offset = steps[step_index - 1];
+
+    if (new_offset === undefined) {
+      alert('This tile is already at the minimum offset.');
+      return false;
+    }
+
+    this.setInProgress();
+    manifest.blocks[tile_index].offset = new_offset;
+
+    // Set all breakpoints that aren't set to hidden to new offset. This should
+    // be altered once tiles has the ability to set the offset on
+    // a per-breakpoint basis.
+    // for (var key in Drupal.settings.tiles.breakpoints) {
+    //   if (manifest.blocks[tile_index].breakpoints[key] != 0) {
+    //     manifest.blocks[tile_index].breakpoints[key] = new_offset;
+    //   }
+    // }
+
+    this.requestRegion(manifest, $.proxy(function() {
+      $("[data-module='" + this.module + "'][data-delta='" + this.delta + "'] " + this.selector.offsetLink + ':eq(0)').click();
+    }, this));
+
+    return false;
+  };
+
+  Tile.prototype.offsetRight = function(e) {
+    var manifest = this.regionManifest();
+    var tile_index = manifest.blockIndex[this.module + '-' + this.delta];
+    var tile_offset = this.offset;
+    var steps = Drupal.settings.tiles.stepsKeys;
+    var step_index = $.inArray(tile_offset, steps);
+    var new_offset = steps[step_index + 1];
+
+    if (new_offset === undefined) {
+      alert('This tile is already full offset.');
+      return false;
+    }
+
+    this.setInProgress();
+    manifest.blocks[tile_index].offset = new_offset;
+
+    // Set all breakpoints that aren't set to hidden to new offset. This should
+    // be altered once tiles has the ability to set the offset on
+    // a per-breakpoint basis.
+    // for (var key in Drupal.settings.tiles.breakpoints) {
+    //   if (manifest.blocks[tile_index].breakpoints[key] != 0) {
+    //     manifest.blocks[tile_index].breakpoints[key] = new_offset;
+    //   }
+    // }
+
+    this.requestRegion(manifest, $.proxy(function() {
+      $("[data-module='" + this.module + "'][data-delta='" + this.delta + "'] " + this.selector.offsetLink + ':eq(0)').click();
+    }, this));
+
+    return false;
+  };
+
+  Tile.prototype.offsetCancel = function(e) {
+    window.location.reload();
+  };
+
   Tile.prototype.regionManifest = function() {
     var region = this.region.attr('data-name');
     var manifest = {
@@ -188,6 +343,7 @@
         delta: delta,
         region: region,
         width: parseInt($t.attr('data-width'), 10),
+        offset: parseInt($t.attr('data-offset'), 10),
         weight: weight
       }
       block.breakpoints = {};
@@ -405,7 +561,7 @@
 
     return false;
   };
-  
+
   Tile.prototype.widthSelect = function(e) {
     var manifest = this.regionManifest();
     var tile_index = manifest.blockIndex[this.module + '-' + this.delta];
