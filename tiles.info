@@ -4,7 +4,7 @@ package = 'Tiles'
 core = 7.x
 php = 5.1
 
-version = 7.x-0.5
+version = 7.x-0.6
 
 files[] = includes/layout/TileLayout.php
 files[] = includes/layout/TileLayoutController.php
