@@ -402,12 +402,28 @@ function tiles_contextual_links_view_alter(&$element, $items) {
 
     // Add block type to links.
     if ($block->module == 'bean' && tiles_is_tile('bean', $block->delta) && user_access('arrange tiles')) {
-      $element['#links'] = array(
+      $links = array(
         'bean-type' => array(
           'title' => $element['#element']['#block']->bean_type,
           'href' => current_path(),
         ),
-      ) + $element['#links'];
+      );
+
+      if (isset($element['#element']['bean'])) {
+        $delta = current(element_children($element['#element']['bean']));
+        if (isset($element['#element']['bean'][$delta]['#entity'])) {
+          $bean = $element['#element']['bean'][$delta]['#entity'];
+          if (isset($bean->style)) {
+            $styles = bean_style_get_styles();
+            $links['bean-style'] = array(
+              'title' => 'Style: ' . $styles[$bean->style]['label'],
+              'href' => current_path(),
+            );
+          }
+        }
+      }
+
+      $element['#links'] = $links + $element['#links'];
     }
   }
 }
