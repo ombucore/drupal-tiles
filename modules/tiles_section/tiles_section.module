@@ -351,6 +351,40 @@ function tiles_section_tiles_container_info() {
 }
 
 /**
+ * Implements hook_node_view().
+ */
+function tiles_section_node_view($node, $view_mode, $langcode) {
+  if (variable_get('tiles_section_render_in_region', 1) && isset($node->content['field_sections'])) {
+    $sections = array();
+
+    $sections['sections'] = $node->content['field_sections'];
+    tiles_section_store($sections);
+    $node->content['field_sections']['#access'] = FALSE;
+  }
+}
+
+/**
+ * Helper function to store sections for rendering in page.
+ */
+function tiles_section_store($new_sections = NULL) {
+  $sections =& drupal_static(__FUNCTION__, array());
+
+  if ($new_sections) {
+    $sections = $new_sections;
+  }
+
+  return $sections;
+}
+
+/**
+ * Implements hook_page_alter().
+ */
+function tiles_section_page_alter(&$page) {
+  // Add sections if present.
+  $page['sections'] = tiles_section_store();
+}
+
+/**
  * Theme callbacks.
  */
 
