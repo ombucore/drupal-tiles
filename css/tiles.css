@@ -8,7 +8,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  z-index: 1002;
+  z-index: 904;
   background-color: #646464;
   background-color: rgba(0, 100, 0, 0.8);
   border: 1px solid #006400;
@@ -140,11 +140,11 @@
   position: relative;
 }
 [data-type="region"].dragging {
-  z-index: 1001;
+  z-index: 902;
 }
 .region-overlay {
   content: '';
-  z-index: 1001;
+  z-index: 901;
   position: absolute;
   top: 0;
   left: 0;
@@ -160,6 +160,8 @@
   top: 0;
   height: 34px;
   padding: 0 0.75em;
+  font-family: Helvetica, Arial, sans-serif;
+  text-transform: none;
   font-size: 12px;
   line-height: 34px;
   color: #e3e3e3;
@@ -181,21 +183,22 @@
   left: -15px;
   right: -15px;
 }
-[data-type="region"].dragging > .region-overlay {
+.dragging > .region-overlay {
   background-color: transparent;
   border-color: #006400;
   outline: 15px solid rgba(0, 100, 0, 0.3);
+  z-index: 903;
 }
-[data-type="region"].dragging > .region-overlay .name {
+.dragging > .region-overlay .name {
   font-size: 16px;
   color: white;
   background-color: #006400;
 }
-[data-type="region"].dragging > .region-overlay .name:before {
+.dragging > .region-overlay .name:before {
   border-left-color: #006400;
 }
 [data-type="region"][data-name="section"] > .region-overlay {
-  background-color: rgba(238, 238, 238, 0);
+  background-color: transparent;
 }
 .resizing.tile {
   position: relative;

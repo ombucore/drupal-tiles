@@ -1,4 +1,4 @@
-@z-index-contextual-menu: 1000;
+@z-index-contextual-menu: 900;
 
 @color-green: rgb(0, 100, 0);
 
@@ -31,7 +31,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  z-index: @z-index-contextual-menu + 2;
+  z-index: @z-index-contextual-menu + 4;
   background-color: #646464;
   background-color: fade(@color-green, 80);
   border: 1px solid @color-green;
@@ -152,7 +152,7 @@
   position: relative;
 
   &.dragging {
-    z-index: 1001;
+    z-index: @z-index-contextual-menu + 2;
   }
 }
 
@@ -176,6 +176,8 @@
     top: 0;
     height: @label-height;
     padding: 0 0.75em;
+    font-family: Helvetica, Arial, sans-serif;
+    text-transform: none;
     font-size: 12px;
     line-height: @label-height;
     color: lighten(@label-background-color, 50);
@@ -200,10 +202,11 @@
     right: -15px;
   }
 
-  [data-type="region"].dragging > & {
+  .dragging > & {
     background-color: transparent;
     border-color: @color-green;
     outline: 15px solid fade(@color-green, 30);
+    z-index: @z-index-contextual-menu + 3;
 
     .name {
       font-size: 16px;
@@ -217,7 +220,7 @@
   }
 
   [data-type="region"][data-name="section"] > & {
-    background-color: fade(#eee, 0);
+    background-color: transparent;
   }
 }
 
