@@ -130,7 +130,6 @@
     // document.write after a block is moved. Using document.write after a page
     // load overwrites the whole dom.
     document.write = function() {};
-    var overlayContent = 'Hello world';
     $(this.selector.region).each(function(i, el) {
       if (!$(el).children('.region-overlay').length) {
         $(el).append('<div class="region-overlay"><div class="inner"><div class="name">' + $(el).attr('data-name') + '</div></div></div>');

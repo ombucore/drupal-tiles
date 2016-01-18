@@ -1,3 +1,5 @@
+@z-index-contextual-menu: 1000;
+
 @color-green: rgb(0, 100, 0);
 
 /* Basic CSS3 Mixins (not using Toolkit to keep this independent of submodules) PS NO IE SUPPORT!! */
@@ -27,11 +29,12 @@
   position: absolute;
   top: 0;
   left: 0;
-  z-index: 1000; /* +1 than contextual menu */
-  height: 100%;
-  width: 100%;
+  right: 0;
+  bottom: 0;
+  z-index: @z-index-contextual-menu + 2;
   background-color: #646464;
   background-color: fade(@color-green, 80);
+  border: 1px solid @color-green;
   .inner { /* Vertical Centering */
     display: table;
     width: 100%;
@@ -155,14 +158,14 @@
 
 .region-overlay {
   content: '';
+  z-index: @z-index-contextual-menu + 1;
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  border: 1px dotted black;
-  border: 1px solid #ddd;
-  background-color: fade(#eee, 90);
+  border: 1px solid #ccc;
+  background-color: fade(#eee, 80);
 
   .name {
     @label-height: 34px;
@@ -211,6 +214,10 @@
         border-left-color: @color-green;
       }
     }
+  }
+
+  [data-type="region"][data-name="section"] > & {
+    background-color: fade(#eee, 0);
   }
 }
 

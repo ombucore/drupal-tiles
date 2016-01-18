@@ -6,12 +6,12 @@
   position: absolute;
   top: 0;
   left: 0;
-  z-index: 1000;
-  /* +1 than contextual menu */
-  height: 100%;
-  width: 100%;
+  right: 0;
+  bottom: 0;
+  z-index: 1002;
   background-color: #646464;
   background-color: rgba(0, 100, 0, 0.8);
+  border: 1px solid #006400;
 }
 .tile-overlay .inner {
   /* Vertical Centering */
@@ -144,14 +144,14 @@
 }
 .region-overlay {
   content: '';
+  z-index: 1001;
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  border: 1px dotted black;
-  border: 1px solid #ddd;
-  background-color: rgba(238, 238, 238, 0.9);
+  border: 1px solid #ccc;
+  background-color: rgba(238, 238, 238, 0.8);
 }
 .region-overlay .name {
   display: block;
@@ -193,6 +193,9 @@
 }
 [data-type="region"].dragging > .region-overlay .name:before {
   border-left-color: #006400;
+}
+[data-type="region"][data-name="section"] > .region-overlay {
+  background-color: rgba(238, 238, 238, 0);
 }
 .resizing.tile {
   position: relative;
