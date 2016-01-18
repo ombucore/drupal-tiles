@@ -33,9 +33,9 @@ function tiles_add_form($form, &$form_state, $type = 'region', $selector = NULL)
     $tile_options = tiles_get_tile_types_options($container->getTileTypes());
     $form['block_type'] = array(
       '#type' => 'select',
-      '#title' => t('Block Type'),
+      '#title' => t('Tile Type'),
       '#options' => array('' => 'Select One') + $tile_options['bean types'] + $tile_options['blocks'],
-      '#description' => t("Choose the type of block you'd like to add"),
+      '#description' => t("Choose the type of tile you'd like to add"),
       '#required' => TRUE,
     );
 
@@ -44,8 +44,7 @@ function tiles_add_form($form, &$form_state, $type = 'region', $selector = NULL)
       '#title' => t('Region'),
       '#type' => 'select',
       '#options' => $regions,
-      '#description' => t('Choose a region for the block. Only regions where
-      you can add blocks are listed.'),
+      '#description' => t('Choose a region for the tile. Only regions where you can add tiles are listed.'),
       '#default_value' => key_exists('content', $regions) ? 'content' : key($regions),
     );
     // Hide regions if only one option.
@@ -103,7 +102,7 @@ function tiles_add_form_next($form, &$form_state) {
     );
     $layout->addBlock($block);
 
-    drupal_set_message(t('Block %title added', array('%title' => $form['block_type']['#options'][$form_state['values']['block_type']])));
+    drupal_set_message(t('Tile %title added', array('%title' => $form['block_type']['#options'][$form_state['values']['block_type']])));
   }
 }
 
@@ -208,7 +207,7 @@ function tiles_delete($module, $delta) {
           }
           context_save($context);
 
-          drupal_set_message(t('Block removed'));
+          drupal_set_message(t('Tile removed'));
         }
       }
       break;
