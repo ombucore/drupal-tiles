@@ -28,24 +28,24 @@ class TileLayout extends Entity {
   public $selector;
 
   /**
-   * Blocks handled by this layout.
+   * Tiles handled by this layout.
    *
-   * There will be a element for each block within each breakpoint that the
-   * block has a unique width for. This means there might be duplicate
-   * block/delta elements that store different widths for different breakpoints.
-   * These get transformed to a single element within $this->sortedBlocks using
-   * $this->sortBlocks().
+   * There will be a element for each tile within each breakpoint that the
+   * tile has a unique width for. This means there might be duplicate
+   * tile/delta elements that store different widths for different breakpoints.
+   * These get transformed to a single element within $this->sortedTiles using
+   * $this->sortTiles().
    *
    * @param array
    */
-  protected $blocks = array();
+  protected $tiles = array();
 
   /**
-   * Sorted blocks within regions.
+   * Sorted tiles within regions.
    *
    * @param array
    */
-  protected $sortedBlocks;
+  protected $sortedTiles;
 
   /**
    * Block info from hook_block_info().
@@ -54,11 +54,21 @@ class TileLayout extends Entity {
    */
   protected $blockInfo = array();
 
-
   /**
-   * Set block in this layout.
+   * Add new tile via Block array definition.
    *
-   * @param Object $block
+   * This preserves the legacy way of adding block, e.g.:
+   *
+   * @code
+   * $layout->addBlock(array(
+   *  'region' => 'content',
+   *  'module' => 'bean',
+   *  'delta' => 'delta',
+   *  'weight' => 1,
+   * ));
+   * @endcode
+   *
+   * @param Array $block
    *   Block definition containing the following keys:
    *     - region
    *     - module
@@ -67,106 +77,112 @@ class TileLayout extends Entity {
    *       breakpoints)
    *     - width (defaults to max step from tiles_get_max_step())
    *     - weight
-   *     - indexable (should this block be indexed along with parent layout)
+   *     - indexable (should this tile be indexed along with parent layout)
    */
   public function addBlock($block) {
-    if (!is_object($block)) {
-      $block = (object) $block;
-    }
+    $tile = new Tile();
+    $tile->loadUp($block);
+    $this->addTile($tile);
+  }
 
-    // Force bid to be {module}-{delta}. This is in part to be compatible with
-    // block reactions in context, but also provides a quick way to determine
-    // block source.
-    $block->bid = $block->module . '-' . $block->delta;
-
-    if (!isset($block->breakpoint)) {
-      $block->breakpoint = tiles_get_default_breakpoint();
-    }
-
-    if (!isset($block->width)) {
-      $block->width = tiles_get_max_step();
-    }
-
-    if (!isset($block->indexable)) {
-      $block->indexable = tiles_get_indexable($block->module, $block->delta, $this->tid);
-    }
-
-    $this->blocks[] = $block;
-    $this->sortedBlocks = NULL;
+  /**
+   * Set tile in this layout.
+   *
+   * @param Object $tile
+   *   Tile definition containing the following keys:
+   *     - region
+   *     - module
+   *     - delta
+   *     - breakpoint (defaults to greatest breakpoint defined by theme
+   *       breakpoints)
+   *     - width (defaults to max step from tiles_get_max_step())
+   *     - weight
+   *     - indexable (should this tile be indexed along with parent layout)
+   */
+  public function addTile(Tile $tile) {
+    $this->tiles[] = $tile;
+    $this->sortedTiles = NULL;
     $this->blockInfo = array();
   }
 
   /**
-   * Get all sorted blocks.
-   *
-   * @return array
-   *   All blocks sorted and keyed by region.
+   * Get all tiles.
    */
-  public function getAllSortedBlocks() {
-    if ($this->sortedBlocks === NULL) {
-      $this->sortBlocks();
-    }
-
-    return $this->sortedBlocks;
+  public function getTiles() {
+    return $this->tiles;
   }
 
   /**
-   * Get sorted blocks by a specific region.
-   *
-   * @param string $region
-   *   Region key to find blocks for.
+   * Get all sorted tiles.
    *
    * @return array
-   *   Blocks for specified region.
+   *   All tiles sorted and keyed by region.
    */
-  public function getSortedBlocksByRegion($region) {
-    if ($this->sortedBlocks === NULL) {
-      $this->sortBlocks();
+  public function getAllSortedTiles() {
+    if ($this->sortedTiles === NULL) {
+      $this->sortTiles();
     }
 
-    return isset($this->sortedBlocks[$region]) ? $this->sortedBlocks[$region] : FALSE;
+    return $this->sortedTiles;
   }
 
   /**
-   * Get renderable blocks for a region.
+   * Get sorted tiles by a specific region.
    *
    * @param string $region
-   *   Region key to find blocks for.
+   *   Region key to find tiles for.
    *
    * @return array
-   *   Blocks for specified region suitable for drupal_render().
+   *   Tiles for specified region.
    */
-  public function getRenderBlocks($region) {
-    $blocks = $this->getSortedBlocksByRegion($region);
-    if ($blocks) {
-      // Merge tile layout block info with info from hook_block_info().
+  public function getSortedTilesByRegion($region) {
+    if ($this->sortedTiles === NULL) {
+      $this->sortTiles();
+    }
+
+    return isset($this->sortedTiles[$region]) ? $this->sortedTiles[$region] : FALSE;
+  }
+
+  /**
+   * Get renderable tiles for a region.
+   *
+   * @param string $region
+   *   Region key to find tiles for.
+   *
+   * @return array
+   *   Tiles for specified region suitable for drupal_render().
+   */
+  public function getRenderTiles($region) {
+    $tiles = $this->getSortedTilesByRegion($region);
+    if ($tiles) {
+      // Merge tile layout tile info with info from hook_tile_info().
       $info = $this->blockInfo();
-      foreach ($blocks as $block) {
-        $block->title = isset($info[$block->module][$block->delta]->title) ? $info[$block->module][$block->delta]->title : NULL;
-        $block->cache = isset($info[$block->module][$block->delta]->cache) ? $info[$block->module][$block->delta]->cache : DRUPAL_NO_CACHE;
+      foreach ($tiles as $tile) {
+        $tile->title = isset($info[$tile->module][$tile->delta]->title) ? $info[$tile->module][$tile->delta]->title : NULL;
+        $tile->cache = isset($info[$tile->module][$tile->delta]->cache) ? $info[$tile->module][$tile->delta]->cache : DRUPAL_NO_CACHE;
       }
 
-      $blocks = _block_render_blocks($blocks);
+      $tiles = _block_render_blocks($tiles);
 
-      return _block_get_renderable_array($blocks);
+      return _block_get_renderable_array($tiles);
     }
   }
 
   /**
-   * Clear blocks from a given region, or all blocks.
+   * Clear tiles from a given region, or all tiles.
    *
    * @param string $region
-   *   Given region to clear blocks from. If no region is given, all blocks from
+   *   Given region to clear tiles from. If no region is given, all tiles from
    *   this layout will be cleared.
    */
-  public function clearBlocks($region = NULL) {
+  public function clearTiles($region = NULL) {
     if (!$region) {
-      $this->blocks = array();
+      $this->tiles = array();
     }
     else {
-      foreach ($this->blocks as $i => $block) {
-        if ($block->region == $region) {
-          unset($this->blocks[$i]);
+      foreach ($this->tiles as $i => $tile) {
+        if ($tile->region == $region) {
+          unset($this->tiles[$i]);
         }
       }
     }
@@ -178,69 +194,54 @@ class TileLayout extends Entity {
   public function save() {
     $result = parent::save();
 
-    // Save all blocks. In order to save blocks, clear out all existing block
+    // Save all tiles. In order to save tiles, clear out all existing tile
     // references for layout. This means that a layout always needs to have
-    // blocks attached (which it does if loaded via entity_load()).
+    // tiles attached (which it does if loaded via entity_load()).
     db_delete('tile_layout_blocks')
       ->condition('tid', $this->tid)
       ->execute();
 
-    if ($this->blocks) {
-      $query = db_insert('tile_layout_blocks')
-        ->fields(array(
-          'tid',
-          'module',
-          'delta',
-          'region',
-          'breakpoint',
-          'weight',
-          'width',
-          'indexable',
-        ));
-      foreach ($this->blocks as $block) {
-        $query->values(array(
-          'tid' => $this->tid,
-          'module' => $block->module,
-          'delta' => $block->delta,
-          'region' => $block->region,
-          'breakpoint' => $block->breakpoint,
-          'weight' => $block->weight,
-          'width' => $block->width,
-          'indexable' => (int) $block->indexable,
-        ));
+    $this->sortTiles();
+    if ($this->sortedTiles) {
+      foreach ($this->sortedTiles as $region => $tiles) {
+        $weight = 0;
+        foreach ($tiles as $tile) {
+          $tile->tid = $this->tid;
+          $tile->weight = $weight++;
+          $tile->save();
+        }
       }
-      $query->execute();
     }
 
     return $result;
   }
 
   /**
-   * Transform stored blocks into sorted array, keyed by region.
+   * Transform stored tiles into sorted array, keyed by region.
    *
-   * There might be multiple block definitions in $this->blocks that store
+   * There might be multiple tile definitions in $this->tiles that store
    * different breakpoint data. This method condenses that information into
-   * a property array called "breakpoints". The width of the block will be set
+   * a property array called "breakpoints". The width of the tile will be set
    * to the default breakpoint width.
    */
-  protected function sortBlocks() {
-    $this->sortedBlocks = array();
+  protected function sortTiles() {
+    $this->sortedTiles = array();
 
-    foreach ($this->blocks as $block) {
-      if (!isset($this->sortedBlocks[$block->region])) {
-        $this->sortedBlocks[$block->region] = array();
+    foreach ($this->tiles as $tile) {
+      if (!isset($this->sortedTiles[$tile->region])) {
+        $this->sortedTiles[$tile->region] = array();
       }
 
-      if (!isset($this->sortedBlocks[$block->region][$block->module . '-' . $block->delta])) {
-        $this->sortedBlocks[$block->region][$block->module . '-' . $block->delta] = $block;
+      if (!isset($this->sortedTiles[$tile->region][$tile->module . '-' . $tile->delta])) {
+        $this->sortedTiles[$tile->region][$tile->module . '-' . $tile->delta] = $tile;
       }
 
-      $this->sortedBlocks[$block->region][$block->module . '-' . $block->delta]->breakpoints[$block->breakpoint] = $block->width;
+      $this->sortedTiles[$tile->region][$tile->module . '-' . $tile->delta]->breakpoints[$tile->breakpoint] = $tile->width;
     }
 
     $default_breakpoint = tiles_get_default_breakpoint();
-    foreach ($this->sortedBlocks as $region => $blocks) {
-      uasort($this->sortedBlocks[$region], function($a, $b) {
+    foreach ($this->sortedTiles as $region => $tiles) {
+      uasort($this->sortedTiles[$region], function($a, $b) {
         $a_weight = (is_object($a) && isset($a->weight)) ? $a->weight : 0;
         $b_weight = (is_object($b) && isset($b->weight)) ? $b->weight : 0;
         if ($a_weight == $b_weight) {
@@ -249,25 +250,25 @@ class TileLayout extends Entity {
         return ($a_weight < $b_weight) ? -1 : 1;
       });
 
-      // Make sure width for block is set to default breakpoint width. If not
+      // Make sure width for tile is set to default breakpoint width. If not
       // set, default to max width.
-      foreach ($blocks as $key => $block) {
-        $block->breakpoint = $default_breakpoint;
-        $block->width = isset($block->breakpoints[$default_breakpoint]) ? $block->breakpoints[$default_breakpoint] : tiles_get_max_step();
+      foreach ($tiles as $key => $tile) {
+        $tile->breakpoint = $default_breakpoint;
+        $tile->width = isset($tile->breakpoints[$default_breakpoint]) ? $tile->breakpoints[$default_breakpoint] : tiles_get_max_step();
       }
     }
   }
 
   /**
-   * Get info arrays for all blocks stored by this layout.
+   * Get info arrays for all tiles stored by this layout.
    *
-   * Determines all unique modules for blocks on page.
+   * Determines all unique modules for tiles on page.
    */
   protected function blockInfo() {
     if (empty($this->blockInfo)) {
-      foreach ($this->blocks as $block) {
-        if (!isset($this->blockInfo[$block->module])) {
-          $this->blockInfo[$block->module] = module_invoke($block->module, 'block_info');
+      foreach ($this->tiles as $tile) {
+        if (!isset($this->blockInfo[$tile->module])) {
+          $this->blockInfo[$tile->module] = module_invoke($tile->module, 'block_info');
         }
       }
     }

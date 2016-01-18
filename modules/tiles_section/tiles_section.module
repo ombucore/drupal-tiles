@@ -204,12 +204,12 @@ function tiles_section_field_widget_form_alter(&$element, &$form_state, $context
       '#weight' => -10,
     );
 
-    // Allow other modules to insert additional settings.
-    drupal_alter('tiles_section_form', $element, $context);
-
     $element['value']['#description'] = t('Title of section. Delete the title in order to delete the section from this page.');
     $element['value']['#prefix'] = '<div style="float:left; width: 49%;">';
     $element['value']['#suffix'] = '</div>';
+
+    // Allow other modules to insert additional settings.
+    drupal_alter('tiles_section_form', $element, $context);
   }
 }
 
@@ -272,9 +272,13 @@ function tiles_section_field_insert($entity_type, $entity, $field, $instance, $l
       $settings = unserialize($item['settings']);
       if (isset($settings['tiles'])) {
         list($entity_id) = entity_extract_ids($entity_type, $entity);
-        $context = tiles_section_get_context($entity_id, $item['id']);
 
-        tiles_assign_tiles($context, $settings['tiles']);
+        $container = tiles_get_container('section');
+        $layout = $container->getLayout($entity_id . '-' . $item['id']);
+        foreach ($settings['tiles'] as $block) {
+          $layout->addBlock($block);
+        }
+        $layout->save();
       }
     }
   }
@@ -347,6 +351,40 @@ function tiles_section_tiles_container_info() {
 }
 
 /**
+ * Implements hook_node_view().
+ */
+function tiles_section_node_view($node, $view_mode, $langcode) {
+  if (variable_get('tiles_section_render_in_region', 1) && isset($node->content['field_sections'])) {
+    $sections = array();
+
+    $sections['sections'] = $node->content['field_sections'];
+    tiles_section_store($sections);
+    $node->content['field_sections']['#access'] = FALSE;
+  }
+}
+
+/**
+ * Helper function to store sections for rendering in page.
+ */
+function tiles_section_store($new_sections = NULL) {
+  $sections =& drupal_static(__FUNCTION__, array());
+
+  if ($new_sections) {
+    $sections = $new_sections;
+  }
+
+  return $sections;
+}
+
+/**
+ * Implements hook_page_alter().
+ */
+function tiles_section_page_alter(&$page) {
+  // Add sections if present.
+  $page['sections'] = tiles_section_store();
+}
+
+/**
  * Theme callbacks.
  */
 
@@ -401,9 +439,9 @@ function template_preprocess_tiles_section(&$variables) {
   // Get tiles width for each block.
   foreach (element_children($build['content']) as $block_key) {
     // Only set the width of the block if it is not already set.
-    if (isset($tiles[$block_key]['#block'])) {
+    if (isset($tiles[$block_key]['#block']->width)) {
       $block = $tiles[$block_key]['#block'];
-      $tiles[$block_key]['#block']->width = tiles_get_width($block->module, $block->delta, ($context ? $context->name : NULL));
+      $tiles[$block_key]['#block']->width = tiles_get_width($block->module, $block->delta);
     }
   }
 
@@ -423,7 +461,16 @@ function tiles_section_add_tile($node, $section) {
   // Keep user in overlay.
   $url = 'admin/tiles/add/section/' . $selector;
   if (module_exists('overlay') && overlay_get_mode() == 'child') {
-    overlay_close_dialog($_GET['destination'], array('fragment' => 'overlay=' . urlencode($url . '?destination=' . $_GET['destination'])));
+    // Fix Safari bug that improperly redirects destination if destination is
+    // the front page (e.g. node/1 will be redirected to / but loose overlay
+    // context).
+    if ($_GET['destination'] == variable_get('site_frontpage', '')) {
+      $_GET['destination'] = '<front>';
+    }
+    overlay_close_dialog($_GET['destination'], array(
+      'fragment' => 'overlay=' . urlencode($url . '?destination=' . $_GET['destination']),
+      'absolute' => TRUE,
+    ));
   }
   else {
     drupal_goto($url, array('query' => array('destination' => $_GET['destination'])));

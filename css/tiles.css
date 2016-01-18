@@ -33,6 +33,7 @@
 }
 .dragging.tile {
   position: relative;
+  min-height: 200px;
 }
 .dragging.tile [class*=move] {
   background-image: url(img/sprite.png);
@@ -46,6 +47,13 @@
   border: 0;
   padding: 0;
   border-radius: 0;
+}
+.dragging.tile .offset-menu {
+  margin: -40px auto 0;
+  width: auto;
+  display: block;
+  font-size: 14px;
+  text-align: center;
 }
 .dragging.tile .move-left {
   background-position: -1px -48px;
@@ -69,10 +77,10 @@
   display: block;
   text-transform: uppercase;
   font-size: 12px;
-  background: #f3f3f3;
-  background: -webkit-linear-gradient(#f3f3f3, #aaaaaa);
-  background: -moz-linear-gradient(center top, #f3f3f3 0%, #aaaaaa 100%);
-  background: linear-gradient(#f3f3f3, #aaaaaa);
+  background: #F3F3F3;
+  background: -webkit-linear-gradient(#F3F3F3, #AAAAAA);
+  background: -moz-linear-gradient(center top, #F3F3F3 0%, #AAAAAA 100%);
+  background: linear-gradient(#F3F3F3, #AAAAAA);
   -webkit-background-clip: padding-box;
   -webkit-border-radius: 3px;
   -moz-background-clip: padding-box;
@@ -81,10 +89,10 @@
   background-clip: padding-box;
 }
 .dragging.tile .save:hover {
-  background: #aaaaaa;
-  background: -webkit-linear-gradient(#aaaaaa, #f3f3f3);
-  background: -moz-linear-gradient(center top, #aaaaaa 0%, #f3f3f3 100%);
-  background: linear-gradient(#aaaaaa, #f3f3f3);
+  background: #AAAAAA;
+  background: -webkit-linear-gradient(#AAAAAA, #F3F3F3);
+  background: -moz-linear-gradient(center top, #AAAAAA 0%, #F3F3F3 100%);
+  background: linear-gradient(#AAAAAA, #F3F3F3);
 }
 .dragging.tile .cancel {
   margin: 10px auto 0;
@@ -117,12 +125,14 @@
   filter: progid:DXImageTransform.Microsoft.BasicImage(rotation=1);
   margin-top: 12px;
 }
+.contextual-links .bean-style > a,
 .contextual-links .bean-type > a {
   /*Displays type of Bean at top of contextual menu. */
   font-style: italic;
   color: #bbb !important;
   cursor: default;
 }
+.contextual-links .bean-style > a:hover,
 .contextual-links .bean-type > a:hover {
   background-color: transparent;
 }
@@ -186,6 +196,7 @@
 }
 .resizing.tile {
   position: relative;
+  min-height: 200px;
 }
 .resizing.tile .width-minus,
 .resizing.tile .width-plus {
@@ -199,9 +210,9 @@
   margin-top: -50px;
   padding: 0 12px;
   font-family: Arial, sans-serif;
-  text-shadow: -1px 0 #000000, 0 1px #000000, 1px 0 #000000, 0 -1px #000000;
-  -moz-text-shadow: -1px 0 #000000, 0 1px #000000, 1px 0 #000000, 0 -1px #000000;
-  -webkit-text-shadow: -1px 0 #000000, 0 1px #000000, 1px 0 #000000, 0 -1px #000000;
+  text-shadow: -1px 0 black, 0 1px black, 1px 0 black, 0 -1px black;
+  -moz-text-shadow: -1px 0 black, 0 1px black, 1px 0 black, 0 -1px black;
+  -webkit-text-shadow: -1px 0 black, 0 1px black, 1px 0 black, 0 -1px black;
 }
 .resizing.tile .width-minus:hover,
 .resizing.tile .width-plus:hover {
@@ -235,10 +246,10 @@
   display: inline-block;
   text-transform: uppercase;
   font-size: 12px;
-  background: #f3f3f3;
-  background: -webkit-linear-gradient(#f3f3f3, #aaaaaa);
-  background: -moz-linear-gradient(center top, #f3f3f3 0%, #aaaaaa 100%);
-  background: linear-gradient(#f3f3f3, #aaaaaa);
+  background: #F3F3F3;
+  background: -webkit-linear-gradient(#F3F3F3, #AAAAAA);
+  background: -moz-linear-gradient(center top, #F3F3F3 0%, #AAAAAA 100%);
+  background: linear-gradient(#F3F3F3, #AAAAAA);
   -webkit-background-clip: padding-box;
   -webkit-border-radius: 3px;
   -moz-background-clip: padding-box;
@@ -247,10 +258,10 @@
   background-clip: padding-box;
 }
 .resizing.tile .save-cancel-wrapper .save:hover {
-  background: #aaaaaa;
-  background: -webkit-linear-gradient(#aaaaaa, #f3f3f3);
-  background: -moz-linear-gradient(center top, #aaaaaa 0%, #f3f3f3 100%);
-  background: linear-gradient(#aaaaaa, #f3f3f3);
+  background: #AAAAAA;
+  background: -webkit-linear-gradient(#AAAAAA, #F3F3F3);
+  background: -moz-linear-gradient(center top, #AAAAAA 0%, #F3F3F3 100%);
+  background: linear-gradient(#AAAAAA, #F3F3F3);
 }
 .resizing.tile .save-cancel-wrapper .cancel {
   margin: 0;

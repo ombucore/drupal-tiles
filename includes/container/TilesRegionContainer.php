@@ -9,6 +9,15 @@ class TilesRegionContainer extends TilesContainer {
   protected $container = 'region';
 
   /**
+   * Implements parent::hasAccess().
+   */
+  public function hasAccess($layout) {
+    // Tie layout access to menu access, since TilesRegionContainer is tied to
+    // path.
+    return drupal_valid_path($layout->selector);
+  }
+
+  /**
    * Implements parent:getRegions().
    */
   public function getRegions() {
@@ -45,6 +54,7 @@ class TilesRegionContainer extends TilesContainer {
       $region[$block_key]['#weight'] = $block->weight;
       $region[$block_key]['#block']->width = $block->width;
       $region[$block_key]['#block']->breakpoints = (array) $block->breakpoints;
+      $region[$block_key]['#block']->offset =  $block->offset;
     }
 
     // Rebuild blocks into tile rows.

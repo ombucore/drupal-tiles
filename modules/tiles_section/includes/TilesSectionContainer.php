@@ -31,7 +31,7 @@ class TilesSectionContainer extends TilesContainer {
     $layout = $this->getLayout($manifest->selector);
 
     // Clear out any current blocks in passed region.
-    $layout->clearBlocks($manifest->region);
+    $layout->clearTiles($manifest->region);
 
     // Split blocks out by breakpoint.
     $blocks = array();

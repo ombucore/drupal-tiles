@@ -16,12 +16,14 @@ class TileLayoutController extends EntityAPIController {
   function load($ids = array(), $conditions = array()) {
     $entities = parent::load($ids, $conditions);
 
-    $blocks = db_query('SELECT * FROM {tile_layout_blocks} WHERE tid in (:tids)', array(
+    $tiles = db_query('SELECT * FROM {tile_layout_blocks} WHERE tid in (:tids)', array(
       ':tids' => array_keys($entities),
+    ), array(
+      'fetch' => 'Tile',
     ));
-    foreach ($blocks as $block) {
-      if (isset($entities[$block->tid])) {
-        $entities[$block->tid]->addBlock($block);
+    foreach ($tiles as $tile) {
+      if (isset($entities[$tile->tid])) {
+        $entities[$tile->tid]->addTile($tile);
       }
     }
 
