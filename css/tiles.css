@@ -169,6 +169,29 @@
 [data-type="region"][data-name="section"] > .region-name {
   display: none;
 }
+.region-grid {
+  display: none;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding-left: inherit;
+  padding-right: inherit;
+  z-index: 1001;
+}
+.region-grid .row,
+.region-grid .col,
+.region-grid .column {
+  height: 100%;
+}
+.region-grid .column {
+  min-height: 10px;
+  background-color: rgba(0, 100, 0, 0.05);
+}
+.dragging > .region-grid {
+  display: block;
+}
 .region-name {
   display: block;
   position: absolute;

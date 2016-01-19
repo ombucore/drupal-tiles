@@ -187,6 +187,31 @@
   }
 }
 
+.region-grid {
+  display: none;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding-left: inherit;
+  padding-right: inherit;
+  z-index: @z-index-contextual-menu + 1;
+
+  .row, .col, .column {
+    height: 100%;
+  }
+
+  .column {
+    min-height: 10px;
+    background-color: fade(@color-green, 5%);
+  }
+
+  .dragging > & {
+    display: block;
+  }
+}
+
 .region-name {
   @label-height: 34px;
   @label-background-color: rgb(100, 100, 100);

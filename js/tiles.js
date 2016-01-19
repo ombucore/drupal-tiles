@@ -133,12 +133,28 @@
     $(this.selector.region).each(function(i, el) {
       if (!$(el).children('.region-overlay').length) {
         var friendlyName = 'Unnamed region';
+        var gridMarkup = `
+          <div class="row">
+            <div class="col col-xs-1 col-sm-1 col-md-1 col-lg-1"><div class="column"></div></div>
+            <div class="col col-xs-1 col-sm-1 col-md-1 col-lg-1"><div class="column"></div></div>
+            <div class="col col-xs-1 col-sm-1 col-md-1 col-lg-1"><div class="column"></div></div>
+            <div class="col col-xs-1 col-sm-1 col-md-1 col-lg-1"><div class="column"></div></div>
+            <div class="col col-xs-1 col-sm-1 col-md-1 col-lg-1"><div class="column"></div></div>
+            <div class="col col-xs-1 col-sm-1 col-md-1 col-lg-1"><div class="column"></div></div>
+            <div class="col col-xs-1 col-sm-1 col-md-1 col-lg-1"><div class="column"></div></div>
+            <div class="col col-xs-1 col-sm-1 col-md-1 col-lg-1"><div class="column"></div></div>
+            <div class="col col-xs-1 col-sm-1 col-md-1 col-lg-1"><div class="column"></div></div>
+            <div class="col col-xs-1 col-sm-1 col-md-1 col-lg-1"><div class="column"></div></div>
+            <div class="col col-xs-1 col-sm-1 col-md-1 col-lg-1"><div class="column"></div></div>
+            <div class="col col-xs-1 col-sm-1 col-md-1 col-lg-1"><div class="column"></div></div>
+          </div>
+        `;
         if (typeof($(el).attr('data-name-friendly')) !== 'undefined') {
           friendlyName = $(el).attr('data-name-friendly');
         } else if (typeof($(el).attr('data-name')) !== 'undefined') {
           friendlyName = $(el).attr('data-name');
         }
-        $(el).append('<div class="region-name">' + friendlyName + '</div><div class="region-overlay"><div class="inner"></div></div>');
+        $(el).append('<div class="region-name">' + friendlyName + '</div><div class="region-grid">' + gridMarkup + '</div><div class="region-overlay"><div class="inner"></div></div>');
       }
     });
     return this;
