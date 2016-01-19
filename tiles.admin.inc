@@ -69,6 +69,13 @@ function tiles_add_form($form, &$form_state, $type = 'region', $selector = NULL)
     $form['bean_form']['label']['#access'] = FALSE;
     $form['bean_form']['label']['#default_value'] = 'ombucleanup-tempkey';
 
+    $form['width'] = array(
+      '#type' => 'select',
+      '#title' => t('Width'),
+      '#options' => tiles_get_steps(),
+      '#default_value' => tiles_get_max_step(),
+    );
+
     $form['save'] = array(
       '#type' => 'submit',
       '#value' => t('Add'),
@@ -166,6 +173,7 @@ function tiles_add_form_add_submit($form, &$form_state) {
     'delta' => $bean->delta,
     'region' => $form_state['type_values']['region'],
     'weight' => 50,
+    'width' => $form_state['values']['width'],
   );
   $layout->addBlock($block);
   $layout->save();
