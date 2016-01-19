@@ -132,7 +132,13 @@
     document.write = function() {};
     $(this.selector.region).each(function(i, el) {
       if (!$(el).children('.region-overlay').length) {
-        $(el).append('<div class="region-overlay"><div class="inner"><div class="name">' + $(el).attr('data-name') + '</div></div></div>');
+        var friendlyName = 'Unnamed region';
+        if (typeof($(el).attr('data-name-friendly')) !== 'undefined') {
+          friendlyName = $(el).attr('data-name-friendly');
+        } else if (typeof($(el).attr('data-name')) !== 'undefined') {
+          friendlyName = $(el).attr('data-name');
+        }
+        $(el).append('<div class="region-name">' + friendlyName + '</div><div class="region-overlay"><div class="inner"></div></div>');
       }
     });
     return this;

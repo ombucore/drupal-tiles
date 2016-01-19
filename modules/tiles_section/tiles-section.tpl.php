@@ -27,7 +27,7 @@ if (!empty($section_title) && $title_visible) {
       </div>
     </div>
   </div>
-  <div class="container content" data-name="content" data-type="section" data-tiles-selector="<?php print $selector ?>">
+  <div class="container content" data-name-friendly="<?php print t('Section: ') . $section_title; ?>" data-name="content" data-type="section" data-tiles-selector="<?php print $selector ?>">
     <?php print render($tiles) ?>
   </div>
   <div class="container footer">

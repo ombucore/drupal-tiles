@@ -1,4 +1,5 @@
-@z-index-contextual-menu: 900;
+@z-index-drupal-overlay: 500;
+@z-index-contextual-menu: 1000;
 
 @color-green: rgb(0, 100, 0);
 
@@ -51,7 +52,7 @@
   color: white;
 }
 .overlay-open .tile-overlay {
-  z-index: 499; // -1 than Drupal overlay.
+  z-index: @z-index-drupal-overlay - 1; // -1 than Drupal overlay.
 }
 
 .dragging.tile {
@@ -148,7 +149,7 @@
 }
 
 // hilights all regions during dragging
-[data-type="region"] {
+[data-type="region"], .container.content {
   position: relative;
 
   &.dragging {
@@ -164,38 +165,8 @@
   left: 0;
   right: 0;
   bottom: 0;
-  border: 1px solid #ccc;
+  border: 1px solid #999;
   background-color: fade(#eee, 80);
-
-  .name {
-    @label-height: 34px;
-    @label-background-color: rgb(100, 100, 100);
-    display: block;
-    position: absolute;
-    left: 0;
-    top: 0;
-    height: @label-height;
-    padding: 0 0.75em;
-    font-family: Helvetica, Arial, sans-serif;
-    text-transform: none;
-    font-size: 12px;
-    line-height: @label-height;
-    color: lighten(@label-background-color, 50);
-    background-color: @label-background-color;
-
-    &:before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 100%;
-      bottom: 0;
-      width: 0;
-      height: 0;
-      border-style: solid;
-      border-width: @label-height / 2 0 @label-height / 2 @label-height / 4;
-      border-color: transparent transparent transparent @label-background-color;
-    }
-  }
 
   [class^="col-"] [data-type="region"] > & {
     left: -15px;
@@ -207,20 +178,53 @@
     border-color: @color-green;
     outline: 15px solid fade(@color-green, 30);
     z-index: @z-index-contextual-menu + 3;
+  }
+}
 
-    .name {
-      font-size: 16px;
-      color: white;
-      background-color: @color-green;
+[data-type="region"][data-name="section"] {
+  > .region-overlay, > .region-name {
+    display: none;
+  }
+}
 
-      &:before {
-        border-left-color: @color-green;
-      }
-    }
+.region-name {
+  @label-height: 34px;
+  @label-background-color: rgb(100, 100, 100);
+  display: block;
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: @label-height;
+  padding: 0 0.75em;
+  font-family: Helvetica, Arial, sans-serif;
+  text-transform: none;
+  font-size: 12px;
+  line-height: @label-height;
+  color: lighten(@label-background-color, 50);
+  background-color: @label-background-color;
+  z-index: @z-index-contextual-menu + 2;
+
+  &:before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 100%;
+    bottom: 0;
+    width: 0;
+    height: 0;
+    border-style: solid;
+    border-width: @label-height / 2 0 @label-height / 2 @label-height / 4;
+    border-color: transparent transparent transparent @label-background-color;
   }
 
-  [data-type="region"][data-name="section"] > & {
-    background-color: transparent;
+  .dragging > & {
+    color: white;
+    background-color: @color-green;
+    z-index: @z-index-contextual-menu + 5;
+
+    &:before {
+      border-left-color: @color-green;
+    }
   }
 }
 

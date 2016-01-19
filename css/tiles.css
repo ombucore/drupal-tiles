@@ -8,7 +8,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  z-index: 904;
+  z-index: 1004;
   background-color: #646464;
   background-color: rgba(0, 100, 0, 0.8);
   border: 1px solid #006400;
@@ -136,24 +136,40 @@
 .contextual-links .bean-type > a:hover {
   background-color: transparent;
 }
-[data-type="region"] {
+[data-type="region"],
+.container.content {
   position: relative;
 }
-[data-type="region"].dragging {
-  z-index: 902;
+[data-type="region"].dragging,
+.container.content.dragging {
+  z-index: 1002;
 }
 .region-overlay {
   content: '';
-  z-index: 901;
+  z-index: 1001;
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  border: 1px solid #ccc;
+  border: 1px solid #999;
   background-color: rgba(238, 238, 238, 0.8);
 }
-.region-overlay .name {
+[class^="col-"] [data-type="region"] > .region-overlay {
+  left: -15px;
+  right: -15px;
+}
+.dragging > .region-overlay {
+  background-color: transparent;
+  border-color: #006400;
+  outline: 15px solid rgba(0, 100, 0, 0.3);
+  z-index: 1003;
+}
+[data-type="region"][data-name="section"] > .region-overlay,
+[data-type="region"][data-name="section"] > .region-name {
+  display: none;
+}
+.region-name {
   display: block;
   position: absolute;
   left: 0;
@@ -166,8 +182,9 @@
   line-height: 34px;
   color: #e3e3e3;
   background-color: #646464;
+  z-index: 1002;
 }
-.region-overlay .name:before {
+.region-name:before {
   content: '';
   position: absolute;
   top: 0;
@@ -179,26 +196,13 @@
   border-width: 17px 0 17px 8.5px;
   border-color: transparent transparent transparent #646464;
 }
-[class^="col-"] [data-type="region"] > .region-overlay {
-  left: -15px;
-  right: -15px;
-}
-.dragging > .region-overlay {
-  background-color: transparent;
-  border-color: #006400;
-  outline: 15px solid rgba(0, 100, 0, 0.3);
-  z-index: 903;
-}
-.dragging > .region-overlay .name {
-  font-size: 16px;
+.dragging > .region-name {
   color: white;
   background-color: #006400;
+  z-index: 1005;
 }
-.dragging > .region-overlay .name:before {
+.dragging > .region-name:before {
   border-left-color: #006400;
-}
-[data-type="region"][data-name="section"] > .region-overlay {
-  background-color: transparent;
 }
 .resizing.tile {
   position: relative;
