@@ -185,6 +185,8 @@
 
   Tile.prototype.removeRegionOverlays = function() {
     $('.region-overlay', $(this.selector.region)).remove();
+    $('.region-name', $(this.selector.region)).remove();
+    $('.region-grid', $(this.selector.region)).remove();
     return this;
   };
 
@@ -457,15 +459,19 @@
 
   Tile.prototype.setResizable = function() {
     this.domNode.addClass('resizing');
+    this.region.addClass('resizing');
     $('body').addClass('resizing');
     this.addResizeOverlay();
+    this.addRegionOverlays();
     return this;
   };
 
   Tile.prototype.unsetResizable = function() {
     this.domNode.removeClass('resizing');
+    this.region.removeClass('resizing');
     $('body').removeClass('resizing');
     this.removeResizeOverlay();
+    this.removeRegionOverlays();
     return this;
   };
 

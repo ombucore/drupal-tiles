@@ -5,8 +5,8 @@
   font-family: Helvetica, Arial, sans-serif;
   position: absolute;
   top: 0;
-  left: 0;
-  right: 0;
+  left: 15px;
+  right: 15px;
   bottom: 0;
   z-index: 1004;
   background-color: #646464;
@@ -141,8 +141,30 @@
   position: relative;
 }
 [data-type="region"].dragging,
-.container.content.dragging {
+.container.content.dragging,
+[data-type="region"].resizing,
+.container.content.resizing {
   z-index: 1002;
+}
+[data-type="region"].resizing .tile:not(.resizing),
+.container.content.resizing .tile:not(.resizing),
+[data-type="region"].dragging .tile:not(.dragging),
+.container.content.dragging .tile:not(.dragging) {
+  opacity: 0.7;
+}
+[data-type="region"].resizing .tile:not(.resizing):after,
+.container.content.resizing .tile:not(.resizing):after,
+[data-type="region"].dragging .tile:not(.dragging):after,
+.container.content.dragging .tile:not(.dragging):after {
+  content: '';
+  display: block;
+  position: absolute;
+  z-index: 10;
+  top: 0;
+  left: 15px;
+  right: 15px;
+  bottom: 0;
+  background-color: rgba(0, 100, 0, 0.5);
 }
 .region-overlay {
   content: '';
@@ -159,7 +181,8 @@
   left: -15px;
   right: -15px;
 }
-.dragging > .region-overlay {
+.dragging > .region-overlay,
+.resizing > .region-overlay {
   background-color: transparent;
   border-color: #006400;
   outline: 15px solid rgba(0, 100, 0, 0.3);
@@ -187,9 +210,10 @@
 }
 .region-grid .column {
   min-height: 10px;
-  background-color: rgba(0, 100, 0, 0.05);
+  background-color: rgba(0, 100, 0, 0.08);
 }
-.dragging > .region-grid {
+.dragging > .region-grid,
+.resizing > .region-grid {
   display: block;
 }
 .region-name {
@@ -219,12 +243,14 @@
   border-width: 17px 0 17px 8.5px;
   border-color: transparent transparent transparent #646464;
 }
-.dragging > .region-name {
+.dragging > .region-name,
+.resizing > .region-name {
   color: white;
   background-color: #006400;
   z-index: 1005;
 }
-.dragging > .region-name:before {
+.dragging > .region-name:before,
+.resizing > .region-name:before {
   border-left-color: #006400;
 }
 .resizing.tile {

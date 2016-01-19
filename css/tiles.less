@@ -29,8 +29,8 @@
   font-family: Helvetica, Arial, sans-serif;
   position: absolute;
   top: 0;
-  left: 0;
-  right: 0;
+  left: 15px;
+  right: 15px;
   bottom: 0;
   z-index: @z-index-contextual-menu + 4;
   background-color: #646464;
@@ -152,8 +152,25 @@
 [data-type="region"], .container.content {
   position: relative;
 
-  &.dragging {
+  &.dragging, &.resizing {
     z-index: @z-index-contextual-menu + 2;
+  }
+
+  &.resizing .tile:not(.resizing),
+  &.dragging .tile:not(.dragging) {
+    opacity: 0.7;
+
+    &:after {
+      content: '';
+      display: block;
+      position: absolute;
+      z-index: 10;
+      top: 0;
+      left: 15px;
+      right: 15px;
+      bottom: 0;
+      background-color: fade(@color-green, 50%);
+    }
   }
 }
 
@@ -173,7 +190,7 @@
     right: -15px;
   }
 
-  .dragging > & {
+  .dragging > &, .resizing > & {
     background-color: transparent;
     border-color: @color-green;
     outline: 15px solid fade(@color-green, 30);
@@ -204,10 +221,10 @@
 
   .column {
     min-height: 10px;
-    background-color: fade(@color-green, 5%);
+    background-color: fade(@color-green, 8%);
   }
 
-  .dragging > & {
+  .dragging > &, .resizing > & {
     display: block;
   }
 }
@@ -242,7 +259,7 @@
     border-color: transparent transparent transparent @label-background-color;
   }
 
-  .dragging > & {
+  .dragging > &, .resizing > & {
     color: white;
     background-color: @color-green;
     z-index: @z-index-contextual-menu + 5;
