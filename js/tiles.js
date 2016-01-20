@@ -98,8 +98,10 @@
 
   Tile.prototype.setOffset = function() {
     this.domNode.addClass('dragging');
+    this.region.addClass('dragging');
     $('body').addClass('dragging');
     this.addOffsetOverlay();
+    this.addRegionOverlays();
     return this;
   };
 
@@ -108,6 +110,15 @@
     this.region.removeClass('dragging');
     $('body').removeClass('dragging');
     this.removeMoveOverlay();
+    this.removeRegionOverlays();
+    return this;
+  };
+
+  Tile.prototype.unsetOffset = function() {
+    this.domNode.removeClass('dragging');
+    this.region.removeClass('dragging');
+    $('body').removeClass('dragging');
+    this.removeOffsetOverlay();
     this.removeRegionOverlays();
     return this;
   };
@@ -450,6 +461,7 @@
   Tile.prototype.saveHandleSuccess = function() {
     this.unsetDraggable();
     this.unsetResizable();
+    this.unsetOffset();
   };
 
   Tile.prototype.saveHandleError = function() {
