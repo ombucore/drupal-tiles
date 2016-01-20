@@ -30,9 +30,14 @@
   left: 15px;
   bottom: 0;
   width: 0;
-  background: rgba(0, 100, 0, 0.5) url(img/offset-stripes.png) 0 0 repeat;
+  background: rgba(136, 136, 136, 0.5) url(img/offset-stripes-inactive.png) 0 0 repeat;
   background-size: 30px auto;
   opacity: 0.5;
+}
+.dragging > .tile-offset,
+.resizing > .tile-offset {
+  background-color: rgba(0, 100, 0, 0.5);
+  background-image: url(img/offset-stripes-active.png);
 }
 .col-lg-offset-1.col-lg-1 > .tile-offset {
   margin-left: -100%;
@@ -750,7 +755,7 @@
   left: 15px;
   right: 15px;
   bottom: 0;
-  background-color: rgba(0, 100, 0, 0.5);
+  background-color: rgba(136, 136, 136, 0.8);
 }
 .region-overlay {
   content: '';

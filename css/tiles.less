@@ -2,6 +2,7 @@
 @z-index-contextual-menu: 1000;
 
 @color-green: rgb(0, 100, 0);
+@color-gray: rgb(136, 136, 136);
 
 /* Basic CSS3 Mixins (not using Toolkit to keep this independent of submodules) PS NO IE SUPPORT!! */
 .gradient(@start: #333333, @stop: #999999) {
@@ -54,9 +55,14 @@
   left: 15px;
   bottom: 0;
   width: 0;
-  background: fade(@color-green, 50%) url(img/offset-stripes.png) 0 0 repeat;
+  background: fade(@color-gray, 50%) url(img/offset-stripes-inactive.png) 0 0 repeat;
   background-size: 30px auto;
   opacity: 0.5;
+
+  .dragging > &, .resizing > & {
+    background-color: fade(@color-green, 50%);
+    background-image: url(img/offset-stripes-active.png);
+  }
 }
 
 .offset-metrics(@offset-width, @tile-width) {
@@ -201,7 +207,7 @@
       left: 15px;
       right: 15px;
       bottom: 0;
-      background-color: fade(@color-green, 50%);
+      background-color: fade(@color-gray, 80%);
     }
   }
 }
