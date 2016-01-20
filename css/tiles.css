@@ -29,7 +29,7 @@
   top: 0;
   left: 15px;
   bottom: 0;
-  width: 30px;
+  width: 0;
   background: rgba(0, 100, 0, 0.5) url(img/offset-stripes.png) 0 0 repeat;
   background-size: 30px auto;
   opacity: 0.5;

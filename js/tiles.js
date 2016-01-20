@@ -68,6 +68,7 @@
     // Close the contextual links.
     this.domNode.closest('.contextual-links-region').mouseleave();
     this.region = this.domNode.closest(this.selector.region);
+    this.region.tiles = $(this.selector.tile, this.region);
     this.module = this.domNode.attr('data-module');
     this.delta = this.domNode.attr('data-delta');
     this.width = parseInt(this.domNode.attr('data-width'), 10);;
@@ -181,7 +182,8 @@
     overlayContent += '<button class="move-right">Right</button>';
     overlayContent += '<button class="save">Save</button>';
     overlayContent += '<span class="cancel">Cancel</span>';
-    this.domNode.prepend('<div class="tile-offset"></div><div class="tile-overlay"><div class="inner"><div class="control-wrapper">' + overlayContent + '</div></div></div>');
+    this.region.tiles.prepend('<div class="tile-offset"></div>');
+    this.domNode.prepend('<div class="tile-overlay"><div class="inner"><div class="control-wrapper">' + overlayContent + '</div></div></div>');
     $('.move-left', this.domNode).click($.proxy(this,'moveLeft'));
     $('.move-right', this.domNode).click($.proxy(this,'moveRight'));
     $('.cancel', this.domNode).click($.proxy(this, 'moveCancel'));
@@ -190,7 +192,7 @@
   };
 
   Tile.prototype.removeMoveOverlay = function() {
-    $('.tile-offset', this.domNode).remove();
+    $('.tile-offset', this.region.tiles).remove();
     $('.tile-overlay', this.domNode).remove();
     return this;
   };
@@ -264,7 +266,8 @@
     overlayContent += '<button class="move-right">Right</button>';
     overlayContent += '<button class="save">Save</button>';
     overlayContent += '<span class="cancel">Cancel</span>';
-    this.domNode.prepend('<div class="tile-offset"></div><div class="tile-overlay"><div class="inner"><div class="control-wrapper">' + overlayContent + '</div></div></div>');
+    this.region.tiles.prepend('<div class="tile-offset"></div>');
+    this.domNode.prepend('<div class="tile-overlay"><div class="inner"><div class="control-wrapper">' + overlayContent + '</div></div></div>');
     $('select.offset-menu', this.domNode).change($.proxy(this, 'offsetSelect'));
     $('.move-left', this.domNode).click($.proxy(this,'offsetLeft'));
     $('.move-right', this.domNode).click($.proxy(this,'offsetRight'));
@@ -274,7 +277,7 @@
   };
 
   Tile.prototype.removeOffsetOverlay = function() {
-    $('.tile-offset', this.domNode).remove();
+    $('.tile-offset', this.region.tiles).remove();
     $('.tile-overlay', this.domNode).remove();
     return this;
   };
@@ -524,7 +527,8 @@
     overlayContent += '<button class="save">Save</button>';
     overlayContent += '<span class="cancel">Cancel</span>';
     overlayContent += '</div>';
-    this.domNode.prepend('<div class="tile-offset"></div><div class="tile-overlay"><div class="inner"><div class="control-wrapper">' + overlayContent + '</div></div></div>');
+    this.region.tiles.prepend('<div class="tile-offset"></div>');
+    this.domNode.prepend('<div class="tile-overlay"><div class="inner"><div class="control-wrapper">' + overlayContent + '</div></div></div>');
     $('select.width-menu', this.domNode).change($.proxy(this, 'widthSelect'));
     $('.width-plus', this.domNode).click($.proxy(this,'widthPlus'));
     $('.width-minus', this.domNode).click($.proxy(this,'widthMinus'));
@@ -555,7 +559,8 @@
     overlayContent += '<button class="save">Save</button>';
     overlayContent += '<span class="cancel">Cancel</span>';
     overlayContent += '</div>';
-    this.domNode.prepend('<div class="tile-offset"></div><div class="tile-overlay"><div class="inner"><div class="control-wrapper">' + overlayContent + '</div></div></div>');
+    this.region.tiles.prepend('<div class="tile-offset"></div>');
+    this.domNode.prepend('<div class="tile-overlay"><div class="inner"><div class="control-wrapper">' + overlayContent + '</div></div></div>');
     $('.visibility', this.domNode).change($.proxy(this, 'visibilitySelect'));
     $('.cancel', this.domNode).click($.proxy(this, 'resizeCancel'));
     $('.save', this.domNode).click($.proxy(this, 'saveVisibility'));
@@ -673,7 +678,7 @@
   }
 
   Tile.prototype.removeResizeOverlay = function() {
-    $('.tile-offset', this.domNode).remove();
+    $('.tile-offset', this.region.tiles).remove();
     $('.tile-overlay', this.domNode).remove();
     return this;
   };
