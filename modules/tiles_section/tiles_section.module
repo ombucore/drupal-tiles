@@ -19,13 +19,13 @@ function tiles_section_menu() {
   // Menu item exists so contextual links will show up, but hidden by default
   // since it's simply a page redirect to tiles edit screen.
   $items['admin/structure/section'] = array(
-    'title' => 'Add block to section',
+    'title' => 'Add tile to section',
     'page callback' => 'tiles_section_add_tile',
     'access arguments' => array('arrange tiles'),
     'hidden' => TRUE,
   );
   $items['admin/structure/section/%node/%'] = array(
-    'title' => 'Add block to section',
+    'title' => 'Add tile to section',
     'page callback' => 'tiles_section_add_tile',
     'page arguments' => array(3, 4),
     'type' => MENU_LOCAL_ACTION,

@@ -90,7 +90,7 @@ function tiles_menu() {
   */
 
   $items['admin/tiles/add'] = array(
-    'title' => 'Add Block',
+    'title' => 'Add Tile',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('tiles_add_form', 3, 4),
     'access arguments' => array('add tiles'),
@@ -159,12 +159,12 @@ function tiles_menu_local_tasks_alter(&$data, $router_item, $root_path) {
     $data['tabs'][0]['output'][] = array(
       '#theme' => 'menu_local_task',
       '#link' => array(
-        'title' => t('Add Block'),
+        'title' => t('Add Tile'),
         'href' => 'admin/tiles/add/region',
         'localized_options' => array(
           'query' => drupal_get_destination(),
           'attributes' => array(
-            'title' => t('Add a new block to this page'),
+            'title' => t('Add a new tile to this page'),
           ),
         ),
       ),
@@ -537,8 +537,8 @@ function tiles_form_bean_form_alter(&$form, $form_state, $form_id, $layout = NUL
 
   $form['indexable'] = array(
     '#type' => 'checkbox',
-    '#title' => t('Include this block in the search index'),
-    '#description' => t("If checked, the content of this block will be a part of the search index entry for this block's page."),
+    '#title' => t('Include this tile in the search index'),
+    '#description' => t("If checked, the content of this tile will be a part of the search index entry for this tile's page."),
     '#access' => user_access('set tile indexable status'),
     '#default_value' => isset($indexable) ? $indexable : FALSE,
     '#weight' => 10,
