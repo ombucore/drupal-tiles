@@ -111,6 +111,8 @@ function tiles_menu() {
  * Implements hook_menu_alter().
  */
 function tiles_menu_alter(&$items) {
+  $items['block/%bean_delta/edit']['title'] = 'Edit';
+
   // Override block delete to handle deleting block from tile group. Also show
   // delete in contextual menu.
   $items['admin/structure/block/manage/%/%/delete']['title'] = t('Delete');
