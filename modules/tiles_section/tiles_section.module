@@ -436,16 +436,18 @@ function template_preprocess_tiles_section(&$variables) {
   $layout = $container->getLayout($selector);
   $container->buildPage($build, $layout);
 
-  // Get tiles width for each block.
-  foreach (element_children($build['content']) as $block_key) {
-    // Only set the width of the block if it is not already set.
-    if (isset($tiles[$block_key]['#block']->width)) {
-      $block = $tiles[$block_key]['#block'];
-      $tiles[$block_key]['#block']->width = tiles_get_width($block->module, $block->delta);
+  if (!empty($build['content'])) {
+    // Get tiles width for each block.
+    foreach (element_children($build['content']) as $block_key) {
+      // Only set the width of the block if it is not already set.
+      if (isset($tiles[$block_key]['#block']->width)) {
+        $block = $tiles[$block_key]['#block'];
+        $tiles[$block_key]['#block']->width = tiles_get_width($block->module, $block->delta);
+      }
     }
-  }
 
-  $container->wrapRegion($build['content']);
+    $container->wrapRegion($build['content']);
+  }
 
   $variables['tiles'] = $build['content'];
 }
