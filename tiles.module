@@ -112,6 +112,7 @@ function tiles_menu() {
  */
 function tiles_menu_alter(&$items) {
   $items['block/%bean_delta/edit']['title'] = 'Edit';
+  $items['block/%bean_delta/delete']['title'] = 'Delete';
 
   // Override block delete to handle deleting block from tile group. Also show
   // delete in contextual menu.
@@ -503,6 +504,9 @@ function tiles_form_tiles_add_form_alter(&$form, $form_state) {
  * Implements hook_form_FORM_ID_alter().
  */
 function tiles_form_bean_form_alter(&$form, $form_state, $form_id, $layout = NULL) {
+  // Remove block label from title field.
+  $form['title']['#description'] = str_replace('block', 'tile', $form['title']['#description']);
+
   // Only show if user has access to set indexable state on bean.
   if (!user_access('set tile indexable status')) {
     return;
