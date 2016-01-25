@@ -416,10 +416,11 @@ function tiles_contextual_links_view_alter(&$element, $items) {
         $delta = current(element_children($element['#element']['bean']));
         if (isset($element['#element']['bean'][$delta]['#entity'])) {
           $bean = $element['#element']['bean'][$delta]['#entity'];
-          if (isset($bean->style)) {
+          if (isset($bean->bean_style)) {
             $styles = bean_style_get_styles();
+
             $links['bean-style'] = array(
-              'title' => 'Style: ' . $styles[$bean->style]['label'],
+              'title' => 'Style: ' . $styles[$bean->bean_style]['label'],
               'href' => current_path(),
             );
           }
