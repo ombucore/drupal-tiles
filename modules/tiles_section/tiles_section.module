@@ -55,6 +55,17 @@ function tiles_section_theme($existing, $type, $theme, $path) {
 }
 
 /**
+ * Implements hook_module_implements_alter().
+ */
+function tiles_section_module_implements_alter(&$implementations, $hook) {
+  if ($hook == 'page_alter') {
+    $group = $implementations['tiles_section'];
+    unset($implementations['tiles_section']);
+    $implementations['tiles_section'] = $group;
+  }
+}
+
+/**
  * Implements hook_field_widget_info_alter().
  */
 function tiles_section_field_widget_info_alter(&$info) {
