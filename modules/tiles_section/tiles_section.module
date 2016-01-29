@@ -19,13 +19,13 @@ function tiles_section_menu() {
   // Menu item exists so contextual links will show up, but hidden by default
   // since it's simply a page redirect to tiles edit screen.
   $items['admin/structure/section'] = array(
-    'title' => 'Add block to section',
+    'title' => 'Add tile to section',
     'page callback' => 'tiles_section_add_tile',
     'access arguments' => array('arrange tiles'),
     'hidden' => TRUE,
   );
   $items['admin/structure/section/%node/%'] = array(
-    'title' => 'Add block to section',
+    'title' => 'Add tile to section',
     'page callback' => 'tiles_section_add_tile',
     'page arguments' => array(3, 4),
     'type' => MENU_LOCAL_ACTION,
@@ -52,6 +52,17 @@ function tiles_section_theme($existing, $type, $theme, $path) {
       'template' => 'tiles-section',
     ),
   );
+}
+
+/**
+ * Implements hook_module_implements_alter().
+ */
+function tiles_section_module_implements_alter(&$implementations, $hook) {
+  if ($hook == 'page_alter') {
+    $group = $implementations['tiles_section'];
+    unset($implementations['tiles_section']);
+    $implementations['tiles_section'] = $group;
+  }
 }
 
 /**
@@ -436,16 +447,18 @@ function template_preprocess_tiles_section(&$variables) {
   $layout = $container->getLayout($selector);
   $container->buildPage($build, $layout);
 
-  // Get tiles width for each block.
-  foreach (element_children($build['content']) as $block_key) {
-    // Only set the width of the block if it is not already set.
-    if (isset($tiles[$block_key]['#block']->width)) {
-      $block = $tiles[$block_key]['#block'];
-      $tiles[$block_key]['#block']->width = tiles_get_width($block->module, $block->delta);
+  if (!empty($build['content'])) {
+    // Get tiles width for each block.
+    foreach (element_children($build['content']) as $block_key) {
+      // Only set the width of the block if it is not already set.
+      if (isset($tiles[$block_key]['#block']->width)) {
+        $block = $tiles[$block_key]['#block'];
+        $tiles[$block_key]['#block']->width = tiles_get_width($block->module, $block->delta);
+      }
     }
-  }
 
-  $container->wrapRegion($build['content']);
+    $container->wrapRegion($build['content']);
+  }
 
   $variables['tiles'] = $build['content'];
 }

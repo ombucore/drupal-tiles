@@ -68,6 +68,7 @@
     // Close the contextual links.
     this.domNode.closest('.contextual-links-region').mouseleave();
     this.region = this.domNode.closest(this.selector.region);
+    this.region.tiles = $(this.selector.tile, this.region);
     this.module = this.domNode.attr('data-module');
     this.delta = this.domNode.attr('data-delta');
     this.width = parseInt(this.domNode.attr('data-width'), 10);;
@@ -89,22 +90,37 @@
 
   Tile.prototype.setDraggable = function() {
     this.domNode.addClass('dragging');
+    this.region.addClass('dragging');
     $('body').addClass('dragging');
     this.addMoveOverlay();
+    this.addRegionOverlays();
     return this;
   };
 
   Tile.prototype.setOffset = function() {
     this.domNode.addClass('dragging');
+    this.region.addClass('dragging');
     $('body').addClass('dragging');
     this.addOffsetOverlay();
+    this.addRegionOverlays();
     return this;
   };
 
   Tile.prototype.unsetDraggable = function() {
     this.domNode.removeClass('dragging');
+    this.region.removeClass('dragging');
     $('body').removeClass('dragging');
     this.removeMoveOverlay();
+    this.removeRegionOverlays();
+    return this;
+  };
+
+  Tile.prototype.unsetOffset = function() {
+    this.domNode.removeClass('dragging');
+    this.region.removeClass('dragging');
+    $('body').removeClass('dragging');
+    this.removeOffsetOverlay();
+    this.removeRegionOverlays();
     return this;
   };
 
@@ -121,6 +137,41 @@
   /**
    * TODO Use jQuery template
    */
+  Tile.prototype.addRegionOverlays = function() {
+    // Prevent irresponsible js plugins (twitter I'm looking at you) from using
+    // document.write after a block is moved. Using document.write after a page
+    // load overwrites the whole dom.
+    document.write = function() {};
+    $(this.selector.region).each(function(i, el) {
+      if (!$(el).children('.region-overlay').length) {
+        var friendlyName = 'Unnamed region';
+        var gridMarkup = `
+          <div class="row">
+            <div class="col col-xs-1 col-sm-1 col-md-1 col-lg-1"><div class="column"></div></div>
+            <div class="col col-xs-1 col-sm-1 col-md-1 col-lg-1"><div class="column"></div></div>
+            <div class="col col-xs-1 col-sm-1 col-md-1 col-lg-1"><div class="column"></div></div>
+            <div class="col col-xs-1 col-sm-1 col-md-1 col-lg-1"><div class="column"></div></div>
+            <div class="col col-xs-1 col-sm-1 col-md-1 col-lg-1"><div class="column"></div></div>
+            <div class="col col-xs-1 col-sm-1 col-md-1 col-lg-1"><div class="column"></div></div>
+            <div class="col col-xs-1 col-sm-1 col-md-1 col-lg-1"><div class="column"></div></div>
+            <div class="col col-xs-1 col-sm-1 col-md-1 col-lg-1"><div class="column"></div></div>
+            <div class="col col-xs-1 col-sm-1 col-md-1 col-lg-1"><div class="column"></div></div>
+            <div class="col col-xs-1 col-sm-1 col-md-1 col-lg-1"><div class="column"></div></div>
+            <div class="col col-xs-1 col-sm-1 col-md-1 col-lg-1"><div class="column"></div></div>
+            <div class="col col-xs-1 col-sm-1 col-md-1 col-lg-1"><div class="column"></div></div>
+          </div>
+        `;
+        if (typeof($(el).attr('data-name-friendly')) !== 'undefined') {
+          friendlyName = $(el).attr('data-name-friendly');
+        } else if (typeof($(el).attr('data-name')) !== 'undefined') {
+          friendlyName = $(el).attr('data-name');
+        }
+        $(el).append('<div class="region-name">' + friendlyName + '</div><div class="region-grid">' + gridMarkup + '</div><div class="region-overlay"><div class="inner"></div></div>');
+      }
+    });
+    return this;
+  };
+
   Tile.prototype.addMoveOverlay = function() {
     // Prevent irresponsible js plugins (twitter I'm looking at you) from using
     // document.write after a block is moved. Using document.write after a page
@@ -131,6 +182,7 @@
     overlayContent += '<button class="move-right">Right</button>';
     overlayContent += '<button class="save">Save</button>';
     overlayContent += '<span class="cancel">Cancel</span>';
+    this.region.tiles.prepend('<div class="tile-offset"></div>');
     this.domNode.prepend('<div class="tile-overlay"><div class="inner"><div class="control-wrapper">' + overlayContent + '</div></div></div>');
     $('.move-left', this.domNode).click($.proxy(this,'moveLeft'));
     $('.move-right', this.domNode).click($.proxy(this,'moveRight'));
@@ -140,7 +192,15 @@
   };
 
   Tile.prototype.removeMoveOverlay = function() {
+    $('.tile-offset', this.region.tiles).remove();
     $('.tile-overlay', this.domNode).remove();
+    return this;
+  };
+
+  Tile.prototype.removeRegionOverlays = function() {
+    $('.region-overlay', $(this.selector.region)).remove();
+    $('.region-name', $(this.selector.region)).remove();
+    $('.region-grid', $(this.selector.region)).remove();
     return this;
   };
 
@@ -206,6 +266,7 @@
     overlayContent += '<button class="move-right">Right</button>';
     overlayContent += '<button class="save">Save</button>';
     overlayContent += '<span class="cancel">Cancel</span>';
+    this.region.tiles.prepend('<div class="tile-offset"></div>');
     this.domNode.prepend('<div class="tile-overlay"><div class="inner"><div class="control-wrapper">' + overlayContent + '</div></div></div>');
     $('select.offset-menu', this.domNode).change($.proxy(this, 'offsetSelect'));
     $('.move-left', this.domNode).click($.proxy(this,'offsetLeft'));
@@ -216,6 +277,7 @@
   };
 
   Tile.prototype.removeOffsetOverlay = function() {
+    $('.tile-offset', this.region.tiles).remove();
     $('.tile-overlay', this.domNode).remove();
     return this;
   };
@@ -404,6 +466,7 @@
   Tile.prototype.saveHandleSuccess = function() {
     this.unsetDraggable();
     this.unsetResizable();
+    this.unsetOffset();
   };
 
   Tile.prototype.saveHandleError = function() {
@@ -413,15 +476,19 @@
 
   Tile.prototype.setResizable = function() {
     this.domNode.addClass('resizing');
+    this.region.addClass('resizing');
     $('body').addClass('resizing');
     this.addResizeOverlay();
+    this.addRegionOverlays();
     return this;
   };
 
   Tile.prototype.unsetResizable = function() {
     this.domNode.removeClass('resizing');
+    this.region.removeClass('resizing');
     $('body').removeClass('resizing');
     this.removeResizeOverlay();
+    this.removeRegionOverlays();
     return this;
   };
 
@@ -460,6 +527,7 @@
     overlayContent += '<button class="save">Save</button>';
     overlayContent += '<span class="cancel">Cancel</span>';
     overlayContent += '</div>';
+    this.region.tiles.prepend('<div class="tile-offset"></div>');
     this.domNode.prepend('<div class="tile-overlay"><div class="inner"><div class="control-wrapper">' + overlayContent + '</div></div></div>');
     $('select.width-menu', this.domNode).change($.proxy(this, 'widthSelect'));
     $('.width-plus', this.domNode).click($.proxy(this,'widthPlus'));
@@ -491,6 +559,7 @@
     overlayContent += '<button class="save">Save</button>';
     overlayContent += '<span class="cancel">Cancel</span>';
     overlayContent += '</div>';
+    this.region.tiles.prepend('<div class="tile-offset"></div>');
     this.domNode.prepend('<div class="tile-overlay"><div class="inner"><div class="control-wrapper">' + overlayContent + '</div></div></div>');
     $('.visibility', this.domNode).change($.proxy(this, 'visibilitySelect'));
     $('.cancel', this.domNode).click($.proxy(this, 'resizeCancel'));
@@ -609,6 +678,7 @@
   }
 
   Tile.prototype.removeResizeOverlay = function() {
+    $('.tile-offset', this.region.tiles).remove();
     $('.tile-overlay', this.domNode).remove();
     return this;
   };

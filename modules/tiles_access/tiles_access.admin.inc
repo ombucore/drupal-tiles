@@ -9,7 +9,7 @@
  * Tiles access form.
  */
 function tiles_access_form($form, $form_state, $module, $delta) {
-  drupal_set_title('Block access');
+  drupal_set_title('Tile access');
 
   $form['module'] = array(
     '#type' => 'value',
@@ -23,13 +23,13 @@ function tiles_access_form($form, $form_state, $module, $delta) {
   $form['role_settings'] = array(
     '#type' => 'fieldset',
     '#title' => t('Role based access control settings'),
-    '#description' => t('Select the roles that have access to view this block. If no roles are selected, then the block will be visible to all users'),
+    '#description' => t('Select the roles that have access to view this tile. If no roles are selected, then the tile will be visible to all users'),
   );
 
   $role_options = user_roles(TRUE);
   $form['role_settings']['roles'] = array(
     '#type' => 'checkboxes',
-    '#title' => t('View block'),
+    '#title' => t('View tile'),
     '#options' => $role_options,
     '#default_value' => tiles_access_get_block_settings($module, $delta),
   );
@@ -54,6 +54,6 @@ function tiles_block_access_submit($form, &$form_state) {
 
   tiles_access_save_block_settings($values['module'], $values['delta'], $values['roles']);
 
-  drupal_set_message('Block access updated');
+  drupal_set_message('Tile access updated');
   cache_clear_all();
 }

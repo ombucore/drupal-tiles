@@ -13,7 +13,7 @@
  */
 function tiles_access_menu() {
   $items['admin/structure/block/manage/%/%/access'] = array(
-    'title' => 'Block Access',
+    'title' => 'Tile Access',
     'type' => MENU_LOCAL_TASK,
     'context' => MENU_CONTEXT_INLINE,
     'page callback' => 'drupal_get_form',
