@@ -422,7 +422,7 @@ function theme_tiles_section_navigation($variables) {
     ),
   ));
 
-  $output = '<nav id="tiles-section-navigation">' . $output . '</nav>';
+  $output = '<nav id="tiles-section-navigation"><h6>' .t('On this page') . '</h6>' . $output . '</nav>';
 
   return $output;
 }
