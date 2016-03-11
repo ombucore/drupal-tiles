@@ -1,0 +1,115 @@
+<?php
+
+/**
+ * @file
+ * Tiles replication for content.
+ */
+
+/**
+ * Implements hook_module_implements_alter().
+ */
+function tiles_replicate_module_implements_alter(&$implementations, $hook) {
+  if ($hook == 'replicate_entity_node') {
+    $group = $implementations['tiles_replicate'];
+    unset($implementations['tiles_replicate']);
+    $implementations['tiles_replicate'] = $group;
+  }
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function tiles_replicate_form_replicate_ui_confirm_alter(&$form, $form_state) {
+  // Since replication can take a long time (especially for pages with a lot of
+  // blocks to clone), disable the submit button after click, so multiple
+  // replications aren't triggered.
+  $form['#attached']['js'][] = drupal_get_path('module', 'tiles_replicate') . '/js/drupal.disable-submit.js';
+}
+
+/**
+ * Implements hook_replicate_entity_ENTITY_TYPE().
+ */
+function tiles_replicate_replicate_entity_node(&$replica, $original) {
+  $replica->title .= ' (clone)';
+  $replica->original_id = $original->nid;
+
+  menu_node_prepare($original);
+  if ($original->menu['mlid']) {
+    $replica->menu = array(
+      'enabled' => 1,
+      'description' => '',
+      'link_title' => $replica->title,
+      'plid' => $original->menu['plid'],
+      'weight' => $original->menu['weight'],
+    );
+  }
+}
+
+/**
+ * Implements hook_replicate_entity_ENTITY_TYPE().
+ */
+function tiles_replicate_replicate_entity_bean(&$replica, $original) {
+  // Prepare the bean object for replication.
+  global $user;
+  $style = bean_style_bean_load_style($replica->bid);
+  if ($style) {
+    $replica->bean_style = $style->type;
+  }
+  $replica->original_id = $original->bid;
+  $replica->original_delta = $original->delta;
+  $replica->bid = NULL;
+  $replica->vid = NULL;
+  $replica->uid = $user->uid;
+  $replica->delta = NULL;
+  $replica->created = NULL;
+  $replica->changed = NULL;
+  $replica->label .= ' Replicated';
+}
+
+/**
+ * Implements hook_replicate_entity_alter().
+ */
+function tiles_replicate_replicate_entity_alter(&$replica, $entity_type, $original) {
+  switch ($entity_type) {
+    case 'node':
+      $replica->tiles = tiles_replicate_clone_layout('region', 'node/' . $original->nid);
+      break;
+  }
+}
+
+/**
+ * Implements hook_replicate_field_tiles_setion().
+ */
+function tiles_replicate_replicate_field_tiles_section(&$replica, $entity_type, $field_name) {
+  foreach ($replica->{$field_name} as $language => $values) {
+    foreach ($values as $id => $value) {
+      $selector = $replica->original_id . '-' . $value['id'];
+      $replica->{$field_name}[$language][$id]['id'] = NULL;
+      $replica->{$field_name}[$language][$id]['settings']['tiles'] = tiles_replicate_clone_layout('section', $selector);
+    }
+  }
+}
+/**
+ * Helper function to clone tiles in a layout.
+ */
+function tiles_replicate_clone_layout($layout_type, $selector) {
+  $tiles = array();
+
+  $container = tiles_get_container($layout_type);
+  $layout = $container->getLayout($selector);
+
+  foreach ($layout->getTiles() as $tile) {
+    if ($tile->module == 'bean') {
+      $bean = bean_load_delta($tile->delta);
+
+      $bid = replicate_entity('bean', $bean);
+      $bean = bean_load($bid);
+
+      $tile->delta = $bean->delta;
+      $tiles[] = (array) $tile;
+    }
+  }
+
+  return $tiles;
+}
+

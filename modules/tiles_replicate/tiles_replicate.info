@@ -1,0 +1,8 @@
+name = Replicate tiles
+description = Extends node replication to handle replication of all tiles and layouts belonging to a node.
+version = 7.x-0.1
+package = tiles
+core = 7.x
+
+dependencies[] = tiles
+dependencies[] = replicate
