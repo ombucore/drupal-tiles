@@ -439,12 +439,17 @@ function template_preprocess_tiles_section(&$variables) {
 
   $selector = $element['node']->nid . '-' . $element['id'];
   $variables['selector'] = $selector;
+}
 
+/**
+ * Process function for tiles-section.tpl.php.
+ */
+function template_process_tiles_section(&$variables) {
   $build = array('content' => array());
 
   // Load up any blocks that have been added to this section through tiles.
   $container = tiles_get_container('section');
-  $layout = $container->getLayout($selector);
+  $layout = $container->getLayout($variables['selector']);
   $container->buildPage($build, $layout);
 
   if (!empty($build['content'])) {
