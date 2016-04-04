@@ -67,6 +67,23 @@ function tiles_replicate_replicate_entity_bean(&$replica, $original) {
 }
 
 /**
+ * Implements hook_replicate_entity_after_save().
+ */
+function tiles_replicate_replicate_entity_after_save($clone, $entity_type, $entity) {
+  // Clone bean container tiles.
+  if ($entity_type == 'bean' && $clone->type =='bean_container') {
+    $tiles = tiles_replicate_clone_layout('bean_container', $entity->delta);
+    if ($tiles) {
+      $layout = tiles_get_container('bean_container')->getLayout($clone->delta);
+      foreach ($tiles as $tile) {
+        $layout->addBlock($tile);
+      }
+      $layout->save();
+    }
+  }
+}
+
+/**
  * Implements hook_replicate_entity_alter().
  */
 function tiles_replicate_replicate_entity_alter(&$replica, $entity_type, $original) {
