@@ -6,6 +6,15 @@
  */
 
 /**
+ * Implements hook_entity_info_alter().
+ */
+function tiles_replicate_entity_info_alter(&$info) {
+  // Alter entity class, to prevent beans from clearing block cache
+  // during replication.
+  $info['bean']['entity class'] = 'TilesReplicateBean';
+}
+
+/**
  * Implements hook_module_implements_alter().
  */
 function tiles_replicate_module_implements_alter(&$implementations, $hook) {
@@ -55,6 +64,7 @@ function tiles_replicate_replicate_entity_bean(&$replica, $original) {
   if ($style) {
     $replica->bean_style = $style->type;
   }
+  $replica->replicated = TRUE;
   $replica->original_id = $original->bid;
   $replica->original_delta = $original->delta;
   $replica->bid = NULL;
@@ -109,7 +119,7 @@ function tiles_replicate_replicate_field_tiles_section(&$replica, $entity_type, 
 /**
  * Helper function to clone tiles in a layout.
  */
-function tiles_replicate_clone_layout($layout_type, $selector) {
+function tiles_replicate_clone_layout($layout_type, $selector, $langcode = LANGUAGE_NONE) {
   $tiles = array();
 
   $container = tiles_get_container($layout_type);

@@ -6,3 +6,5 @@ core = 7.x
 
 dependencies[] = tiles
 dependencies[] = replicate
+
+files[] = includes/TilesReplicateBean.php
