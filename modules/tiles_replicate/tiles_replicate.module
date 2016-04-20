@@ -33,6 +33,7 @@ function tiles_replicate_form_replicate_ui_confirm_alter(&$form, $form_state) {
   // blocks to clone), disable the submit button after click, so multiple
   // replications aren't triggered.
   $form['#attached']['js'][] = drupal_get_path('module', 'tiles_replicate') . '/js/drupal.disable-submit.js';
+  $form['#attached']['css'][] = drupal_get_path('module', 'tiles_replicate') . '/css/tiles-replicate.css';
 }
 
 /**

@@ -18,7 +18,7 @@ class TilesReplicateBean extends Bean {
    * process.
    */
   public function save() {
-    if (FALSE && !empty($this->replicated)) {
+    if (!empty($this->replicated)) {
       $this->setUid()->checkDelta();
 
       if (empty($this->created)) {
