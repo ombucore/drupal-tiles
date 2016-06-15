@@ -856,6 +856,7 @@ function tiles_indexable_mark($layout) {
       search_touch_node($parts[1]);
     }
   }
+  module_invoke_all('tiles_indexable_mark', $layout);
 }
 
 /**

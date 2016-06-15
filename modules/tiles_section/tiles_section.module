@@ -372,6 +372,11 @@ function tiles_section_node_view($node, $view_mode, $langcode) {
     tiles_section_store($sections);
     $node->content['field_sections']['#access'] = FALSE;
   }
+
+  // Add indexable blocks to nodes during search view.
+  if ($view_mode == 'search_result') {
+    $node->content['tiles_section_build'] = tiles_section_node_get_indexable_content($node);
+  }
 }
 
 /**
@@ -393,6 +398,56 @@ function tiles_section_store($new_sections = NULL) {
 function tiles_section_page_alter(&$page) {
   // Add sections if present.
   $page['sections'] = tiles_section_store();
+}
+
+/**
+ * Implements hook_tiles_indexable_mark().
+ */
+function tiles_section_tiles_indexable_mark($layout) {
+  if ($layout->container == 'section') {
+    list($nid) = explode('-', $layout->selector);
+
+    if (module_exists('apachesolr')) {
+      apachesolr_mark_entity('node', $nid);
+    }
+    if (module_exists('search')) {
+      search_touch_node($nid);
+    }
+  }
+}
+
+/**
+ * Implements hook_node_update_index().
+ */
+function tiles_section_node_update_index($node) {
+  return tiles_section_node_get_indexable_content($node);
+}
+
+/**
+ * Helper funtion to get indexable content from node sections.
+ */
+function tiles_section_node_get_indexable_content($node) {
+  $content = '';
+
+  // Index all section layouts for a node while building search index.
+  foreach (field_info_instances('node', $node->type) as $field_name => $field) {
+    $field_info = field_info_field($field_name);
+    if ($field_info['type'] == 'tiles_section') {
+      $sections = field_get_items('node', $node, $field_info['field_name']);
+      if ($sections) {
+        $container = tiles_get_container('section');
+        foreach ($sections as $section) {
+          $layout = $container->getLayout($node->nid . '-' . $section['id']);
+          if ($layout) {
+            $layout_content = tiles_index_layout($layout);
+            $content .= drupal_render($layout_content);
+          }
+        }
+      }
+    }
+  }
+
+  return $content;
 }
 
 /**
