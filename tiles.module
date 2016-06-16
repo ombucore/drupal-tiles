@@ -1075,22 +1075,27 @@ function _tiles_visibility($block) {
  * page by checking to see if the user access to edit the current page.
  */
 function _tiles_has_block_access() {
-  // First check if user has tiles access.
-  if (!user_access('arrange tiles')) {
-    return FALSE;
+  $access =& drupal_static(__FUNCTION__);
+
+  if (is_null($access)) {
+    // First check if user has tiles access.
+    if (!user_access('arrange tiles')) {
+      $access = FALSE;
+    }
+    // Node access.
+    elseif ($node = menu_get_object()) {
+      $access = node_access('update', $node);
+    }
+    // Taxonomy access.
+    elseif ($term = menu_get_object('taxonomy_term', 2)) {
+      $access = user_access('administer taxonomy') || user_access('edit terms in ' . $term->vid);
+    }
+    else {
+      $access = TRUE;
+    }
   }
 
-  // Node access.
-  if ($node = menu_get_object()) {
-    return node_access('update', $node);
-  }
-
-  // Taxonomy access.
-  if ($term = menu_get_object('taxonomy_term', 2)) {
-    return user_access('administer taxonomy') || user_access('edit terms in ' . $term->vid);
-  }
-
-  return TRUE;
+  return $access;
 }
 
 /**
