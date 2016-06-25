@@ -1,0 +1,9 @@
+name = Section field
+description =  Section field for sectioned page module
+version = 7.x-0.1
+core = 7.x
+
+dependencies[] = field
+dependencies[] = text
+
+files[] = includes/TilesSectionContainer.php

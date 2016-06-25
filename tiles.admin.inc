@@ -7,35 +7,50 @@
 
 /**
  * Form for adding tiles to a context.
+ *
+ * @param $form
+ *   Nested array of form elements that comprise the form.
+ * @param $form_state
+ *   A keyed array containing the current state of the form.
+ * @param $type
+ *   The type of tiles container requesting the tiles add form. Defaults to the
+ *   tiles.module provided container of 'region'.
+ * @param $selector
+ *   The selector to use for layout. If empty, will use destination path.
  */
-function tiles_add_form($form, &$form_state, $context_name = '') {
+function tiles_add_form($form, &$form_state, $type = 'region', $selector = NULL) {
   if (empty($form_state['next_step'])) {
-    $form['context'] = array(
-      '#type' => 'value',
-      '#value' => $context_name,
-    );
-    $form['destination'] = array(
-      '#type' => 'value',
-      '#value' => $_GET['destination'],
-    );
+    if (!$type) {
+      $type = 'region';
+    }
+    $container = tiles_get_container($type);
 
-    $tile_options = tiles_get_tile_types_options();
+    if (!$selector) {
+      $selector = $_GET['destination'];
+    }
+    $form_state['layout'] = $container->getLayout($selector);
+
+    $tile_options = tiles_get_tile_types_options($container->getTileTypes());
     $form['block_type'] = array(
       '#type' => 'select',
-      '#title' => t('Block Type'),
+      '#title' => t('Tile Type'),
       '#options' => array('' => 'Select One') + $tile_options['bean types'] + $tile_options['blocks'],
-      '#description' => t("Choose the type of block you'd like to add"),
+      '#description' => t("Choose the type of tile you'd like to add"),
       '#required' => TRUE,
     );
 
+    $regions = $container->getRegions();
     $form['region'] = array(
       '#title' => t('Region'),
       '#type' => 'select',
-      '#options' => _tiles_get_regions(),
-      '#description' => t('Choose a region for the block. Only regions where
-      you can add blocks are listed.'),
-      '#default_value' => 'content',
+      '#options' => $regions,
+      '#description' => t('Choose a region for the tile. Only regions where you can add tiles are listed.'),
+      '#default_value' => key_exists('content', $regions) ? 'content' : key($regions),
     );
+    // Hide regions if only one option.
+    if (count($regions) <= 1) {
+      $form['region']['#access'] = FALSE;
+    }
 
     $form['next'] = array(
       '#type' => 'submit',
@@ -53,6 +68,13 @@ function tiles_add_form($form, &$form_state, $context_name = '') {
     // Hide the label.
     $form['bean_form']['label']['#access'] = FALSE;
     $form['bean_form']['label']['#default_value'] = 'ombucleanup-tempkey';
+
+    $form['width'] = array(
+      '#type' => 'select',
+      '#title' => t('Width'),
+      '#options' => tiles_get_steps(),
+      '#default_value' => tiles_get_max_step(),
+    );
 
     $form['save'] = array(
       '#type' => 'submit',
@@ -75,27 +97,19 @@ function tiles_add_form_next($form, &$form_state) {
   }
   // Save static block to selected region in the active page context.
   else {
-    // Get the correct context.
-    if ($form_state['values']['context']) {
-      $context = tiles_get_context('context', $form_state['values']['context']);
-    }
-    else {
-      $context = tiles_get_context('path', $form_state['values']['destination']);
-    }
+    $layout = $form_state['layout'];
 
     // Generate proper tiles array.
     list($module, $delta) = explode('__', $form_state['values']['block_type']);
-    $tiles = array(
-      array(
-        'module' => $module,
-        'delta' => $delta,
-        'region' => $form_state['values']['region'],
-        'weight' => 50,
-      ),
+    $block = array(
+      'module' => $module,
+      'delta' => $delta,
+      'region' => $form_state['values']['region'],
+      'weight' => 50,
     );
-    tiles_assign_tiles($context, $tiles);
+    $layout->addBlock($block);
 
-    drupal_set_message(t('Block %title added', array('%title' => $form['block_type']['#options'][$form_state['values']['block_type']])));
+    drupal_set_message(t('Tile %title added', array('%title' => $form['block_type']['#options'][$form_state['values']['block_type']])));
   }
 }
 
@@ -118,68 +132,59 @@ function tiles_add_form_add_validate($form, &$form_state) {
 }
 
 function tiles_add_form_add_submit($form, &$form_state) {
-  module_load_include('inc', 'bean', 'includes/bean.pages');
   $bean = $form_state['bean'];
   entity_form_submit_build_entity('bean', $bean, $form, $form_state);
 
-  // Transform temporary delta key into a readable key.
-  if ($bean->label == 'ombucleanup-tempkey') {
-    if ($bean->title) {
-      $bean->label = $bean->title;
-    }
-    else {
-      $bean->label = $bean->type;
-    }
-  }
+  // Default to use title as label, otherwise use bean type.
+  $bean->label = $bean->title ? $bean->title : $bean->type;
 
-  $max_length = 32;
-  // Base it on the label and make sure it isn't too long for the database
+  // Create a truly unique delta for new beans. Bean::add() has the
+  // possibility of generating deltas that existed in beans that have been
+  // previously deleted. This causes problems, especially when a bean has
+  // been deleted but not removed from other systems (e.g. context), causing
+  // the bean to show up in unintended places.
   $bean->delta = drupal_clean_css_identifier(strtolower($bean->label));
-  $bean->delta = substr($bean->delta, 0, $max_length);
 
-  // Check if delta is unique
-  if (bean_load_delta($bean->delta)) {
-    $i = 0;
-    $separator = '-';
-    $original_delta = $bean->delta;
-    do {
-      $unique_suffix = $separator . $i++;
-      $bean->delta = substr($original_delta, 0, $max_length - drupal_strlen($unique_suffix)) . $unique_suffix;
-    } while (bean_load_delta($bean->delta));
-  }
+  // Make sure it isn't too long for the database.
+  $max_length = 32;
+  $identifier = '-' . db_next_id();
+  $max_length -= strlen($identifier);
+  $bean->delta = substr($bean->delta, 0, $max_length);
+  $bean->delta .= $identifier;
 
   foreach (module_implements('bean_submit') as $module) {
     $function = $module . '_bean_submit';
-    $function($bean, $form, $form_state);
+    $function($bean, $form['bean_form'], $form_state);
   }
 
   $bean->setValues($form_state['values']);
-  field_attach_submit('bean', $bean, $form, $form_state);
+  field_attach_submit('bean', $bean, $form['bean_form'], $form_state);
   $bean->save();
+
   $watchdog_args = array('@type' => $bean->type, '%title' => $bean->label);
   $t_args = array('@type' => $bean->typeName(), '%title' => $bean->label);
 
   watchdog('bean', '@type: added %title.', $watchdog_args, WATCHDOG_NOTICE, $bean->viewURL());
   drupal_set_message(t('@type %title has been created.', $t_args));
 
-  // Save bean to selected region in the active page context.
-  if ($form_state['type_values']['context']) {
-    $context = tiles_get_context('context', $form_state['type_values']['context']);
-  }
-  else {
-    $context = tiles_get_context('path', $form_state['type_values']['destination']);
-  }
-
-  // Generate proper tiles array.
-  $tiles = array(
-    array(
-      'module' => 'bean',
-      'delta' => $bean->delta,
-      'region' => $form_state['type_values']['region'],
-      'weight' => 50,
-    ),
+  $layout = $form_state['layout'];
+  $block = array(
+    'module' => 'bean',
+    'delta' => $bean->delta,
+    'region' => $form_state['type_values']['region'],
+    'weight' => 50,
+    'width' => $form_state['values']['width'],
   );
-  tiles_assign_tiles($context, $tiles);
+  $layout->addBlock($block);
+  $layout->save();
+
+  if (isset($form_state['values']['indexable'])) {
+    $indexable = $form_state['values']['indexable'];
+    tiles_set_indexable('bean', $bean->delta, $indexable, $layout->tid);
+    if ($indexable) {
+      tiles_indexable_mark($layout);
+    }
+  }
 }
 
 /**
@@ -210,24 +215,11 @@ function tiles_delete($module, $delta) {
           }
           context_save($context);
 
-          drupal_set_message(t('Block removed'));
+          drupal_set_message(t('Tile removed'));
         }
       }
       break;
   }
 
   drupal_goto($_GET['destination']);
-}
-
-function tiles_delete_submit($form, &$form_state) {
-  $context = context_load($form['#context']);
-  if ($context) {
-    // Delete bean from context.
-    foreach($context->reactions['tiles']['blocks'] as $key => $value) {
-      if ($value['module'] == 'bean' && $value['delta'] == $form['#bean']->delta) {
-        unset($context->reactions['tiles']['blocks'][$key]);
-      }
-    }
-    context_save($context);
-  }
 }

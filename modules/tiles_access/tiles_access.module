@@ -1,0 +1,150 @@
+<?php
+
+/**
+ * @file
+ * Tiles access control.
+ *
+ * Provides a simplified interface into the block role access settings, as well
+ * as making sure context.module respect core block role settings.
+ */
+
+/**
+ * Implements hook_menu().
+ */
+function tiles_access_menu() {
+  $items['admin/structure/block/manage/%/%/access'] = array(
+    'title' => 'Tile Access',
+    'type' => MENU_LOCAL_TASK,
+    'context' => MENU_CONTEXT_INLINE,
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('tiles_access_form', 4, 5),
+    'access callback' => 'tiles_access_access',
+    'access arguments' => array(4, 5),
+    'weight' => -9,
+    'file' => 'tiles_access.admin.inc',
+  );
+
+  return $items;
+}
+
+/**
+ * Access callback for block access configuration.
+ *
+ * Don't allow system main block to be hidden.
+ */
+function tiles_access_access($module, $delta) {
+  if ($module == 'system' && $delta == 'main') {
+    return FALSE;
+  }
+
+  return user_access('administer blocks');
+}
+
+/**
+ * Implements hook_block_view_alter().
+ */
+function tiles_access_block_view_alter(&$data, $block) {
+  // Remove block content if user doesn't have access to view block, which will
+  // hide the block on the front end.
+  if (!tiles_access_user_access($block)) {
+    $data['content'] = '';
+  }
+}
+
+/**
+ * Returns user access for a given block.
+ *
+ * @param object $block
+ *   The block object
+ * @param array $account
+ *   Optional user account to check against.
+ *
+ * @return bool
+ *   TRUE if user has access to perform $op on $block.
+ */
+function tiles_access_user_access($block, $account = NULL) {
+  $account = isset($account) ? $account : $GLOBALS['user'];
+
+  // Always give users with administer blocks permissions access.
+  if (user_access('administer blocks')) {
+    return TRUE;
+  }
+
+  $acl = tiles_access_get_block_settings($block->module, $block->delta);
+
+  // Check if any of the roles that the user has exist in the allowed access
+  // control list.
+  if ($acl) {
+    return count(array_intersect(array_keys($account->roles), $acl)) > 0;
+  }
+  // Default to allowing access.
+  else {
+    return TRUE;
+  }
+}
+
+/**
+ * Returns block access role settings.
+ *
+ * @param string $module
+ *   The module of the block.
+ * @param string $delta
+ *   The delta of the block.
+ * @param array $roles
+ *   Optional array used to update the roles cache with the given roles.
+ *
+ * @return array
+ *   An array of role ids which have access.
+ */
+function tiles_access_get_block_settings($module, $delta, $roles = NULL) {
+  $grants = &drupal_static(__FUNCTION__);
+
+  $bid = $module . '-' . $delta;
+
+  if ($roles) {
+    // Update roles cache.
+    $grants[$bid] = $roles;
+    return;
+  }
+
+  if (!isset($grants[$bid]) || $grants[$bid] === FALSE) {
+    $grants[$bid] = db_query('SELECT rid FROM {block_role} WHERE module = :module AND delta = :delta', array(
+      ':module' => $module,
+      ':delta' => $delta,
+    ))->fetchCol();
+  }
+
+  return isset($grants[$bid]) ? $grants[$bid] : array();
+}
+
+/**
+ * Saves block access role settings.
+ *
+ * @param string $module
+ *   The module of the block.
+ * @param string $delta
+ *   The delta of the block.
+ * @param array $roles
+ *   Access control settings.
+ */
+function tiles_access_save_block_settings($module, $delta, $roles) {
+  db_delete('block_role')
+    ->condition('module', $module)
+    ->condition('delta', $delta)
+    ->execute();
+  $query = db_insert('block_role')->fields(array('rid', 'module', 'delta'));
+  foreach (array_filter($roles) as $rid) {
+    $query->values(array(
+      'rid' => $rid,
+      'module' => $module,
+      'delta' => $delta,
+    ));
+  }
+  $query->execute();
+
+  // Update access cache.
+  tiles_access_get_block_settings($module, $delta, $roles);
+
+  // Clear all page/block caches.
+  cache_clear_all();
+}

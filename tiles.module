@@ -21,6 +21,24 @@ define('TILES_WIDTH_STEPS', 12);
  */
 
 /**
+ * Implements hook_entity_info().
+ */
+function tiles_entity_info() {
+  return array(
+    'tile_layout' => array(
+      'label' => t('Tile layout'),
+      'entity class' => 'TileLayout',
+      'controller class' => 'TileLayoutController',
+      'base table' => 'tile_layout',
+      'fieldable' => FALSE,
+      'entity keys' => array(
+        'id' => 'tid',
+      ),
+    ),
+  );
+}
+
+/**
  * Implements hook_menu().
  */
 function tiles_menu() {
@@ -30,8 +48,8 @@ function tiles_menu() {
     'context' => MENU_CONTEXT_INLINE,
     'page callback' => '_tiles_move',
     'page arguments' => array(4, 5),
-    'access callback' => 'tiles_is_tile',
-    'access arguments' => array(4, 5),
+    'access callback' => 'tiles_access',
+    'access arguments' => array('move', 4, 5),
     'weight' => -9,
   );
 
@@ -41,15 +59,40 @@ function tiles_menu() {
     'context' => MENU_CONTEXT_INLINE,
     'page callback' => '_tiles_width',
     'page arguments' => array(4, 5),
-    'access callback' => 'tiles_is_tile',
-    'access arguments' => array(4, 5),
+    'access callback' => 'tiles_access',
+    'access arguments' => array('resize', 4, 5),
     'weight' => -9,
   );
 
+  $items['admin/structure/block/manage/%/%/set_offset'] = array(
+    'title' => 'Offset',
+    'type' => MENU_LOCAL_TASK,
+    'context' => MENU_CONTEXT_INLINE,
+    'page callback' => '_tiles_width',
+    'page arguments' => array(4, 5),
+    'access callback' => 'tiles_access',
+    'access arguments' => array('offset', 4, 5),
+    'weight' => -9,
+  );
+
+  /* Hide visibility until properly implemented.
+   * For now, there's only one breakpoint, so doesn't make sense to expose menu.
+  $items['admin/structure/block/manage/%/%/set_visibility'] = array(
+    'title' => 'Visibility',
+    'type' => MENU_LOCAL_TASK,
+    'context' => MENU_CONTEXT_INLINE,
+    'page callback' => '_tiles_visibility',
+    'page arguments' => array(4, 5),
+    'access callback' => 'tiles_access',
+    'access arguments' => array('resize', 4, 5),
+    'weight' => -9,
+  );
+  */
+
   $items['admin/tiles/add'] = array(
-    'title' => 'Add Block',
+    'title' => 'Add Tile',
     'page callback' => 'drupal_get_form',
-    'page arguments' => array('tiles_add_form', 3),
+    'page arguments' => array('tiles_add_form', 3, 4),
     'access arguments' => array('add tiles'),
     'file' => 'tiles.admin.inc',
   );
@@ -68,6 +111,9 @@ function tiles_menu() {
  * Implements hook_menu_alter().
  */
 function tiles_menu_alter(&$items) {
+  $items['block/%bean_delta/edit']['title'] = 'Edit';
+  $items['block/%bean_delta/delete']['title'] = 'Delete';
+
   // Override block delete to handle deleting block from tile group. Also show
   // delete in contextual menu.
   $items['admin/structure/block/manage/%/%/delete']['title'] = t('Delete');
@@ -75,10 +121,29 @@ function tiles_menu_alter(&$items) {
   $items['admin/structure/block/manage/%/%/delete']['context'] = MENU_CONTEXT_INLINE;
   $items['admin/structure/block/manage/%/%/delete']['page callback'] = 'tiles_delete';
   $items['admin/structure/block/manage/%/%/delete']['page arguments'] = array(4, 5);
-  $items['admin/structure/block/manage/%/%/delete']['access callback'] = 'tiles_is_tile';
-  $items['admin/structure/block/manage/%/%/delete']['access arguments'] = array(4, 5);
+  $items['admin/structure/block/manage/%/%/delete']['access callback'] = 'tiles_access';
+  $items['admin/structure/block/manage/%/%/delete']['access arguments'] = array('delete', 4, 5);
   $items['admin/structure/block/manage/%/%/delete']['file'] = 'tiles.admin.inc';
   $items['admin/structure/block/manage/%/%/delete']['module'] = 'tiles';
+}
+
+/**
+ * Permission callback for menus.
+ */
+function tiles_access($op, $module, $delta) {
+  // Default to just checking if a block is a tile and if user has access to
+  // arrange tiles.
+  $access = user_access('arrange tiles') && tiles_is_tile($module, $delta);
+
+  // Allow other modules to alter access.
+  $context = array(
+    'op' => $op,
+    'module' => $module,
+    'delta' => $delta,
+  );
+  drupal_alter('tiles_access', $access, $context);
+
+  return $access;
 }
 
 /**
@@ -94,21 +159,19 @@ function tiles_menu_local_tasks_alter(&$data, $router_item, $root_path) {
       );
     }
 
-    $context = _tiles_get_active_context();
     $data['tabs'][0]['output'][] = array(
       '#theme' => 'menu_local_task',
       '#link' => array(
-        'title' => t('Add Block'),
-        'href' => 'admin/tiles/add/' . ($context ? $context->name : ''),
+        'title' => t('Add Tile'),
+        'href' => 'admin/tiles/add/region',
         'localized_options' => array(
           'query' => drupal_get_destination(),
           'attributes' => array(
-            'title' => t('Add a new block to this page'),
+            'title' => t('Add a new tile to this page'),
           ),
         ),
       ),
     );
-    $data['tabs'][0]['count']++;
 
     // Make sure the Add Block link shows up even for pages that don't have
     // local tasks.
@@ -123,7 +186,7 @@ function tiles_menu_local_tasks_alter(&$data, $router_item, $root_path) {
  * Implements hook_module_implements_alter().
  */
 function tiles_module_implements_alter(&$implementations, $hook) {
-  if ($hook == 'menu_alter') {
+  if (in_array($hook, array('page_alter', 'menu_alter'))) {
     $group = $implementations['tiles'];
     unset($implementations['tiles']);
     $implementations['tiles'] = $group;
@@ -144,6 +207,9 @@ function tiles_permission() {
     'add tiles' => array(
       'title' => t('Add new tiles'),
     ),
+    'set tile indexable status' => array(
+      'title' => t('Set the search index status for tiles'),
+    ),
   );
 }
 
@@ -161,69 +227,35 @@ function tiles_theme() {
     'tiles_tile' => array(
       'render element' => 'element',
     ),
-  );
-}
-
-/**
- * Implements hook_ctools_plugin_api().
- */
-function tiles_ctools_plugin_api($module, $api) {
-  if ($module == 'context' && $api == 'plugins') {
-    return array('version' => 3);
-  }
-}
-
-/**
- * Implements hook_context_plugins().
- */
-function tiles_context_plugins() {
-  $plugins = array();
-  $plugins['tiles_context_reaction_block'] = array(
-    'handler' => array(
-      'path' => drupal_get_path('module', 'tiles') . '/plugins',
-      'file' => 'tiles_context_reaction_block.inc',
-      'class' => 'tiles_context_reaction_block',
-      'parent' => 'context_reaction_block',
+    'breakpoints_indicator' => array(
+      'variables' => array('breakpoints' => array()),
     ),
   );
-  return $plugins;
-}
-
-/**
- * Implements of hook_context_registry().
- */
-function tiles_context_registry() {
-  $registry = array();
-
-  $registry['reactions'] = array(
-    'tiles' => array(
-      'title' => t('Tiles Blocks'),
-      'description' => 'This reaction enforces proper weights for added blocks.',
-      'plugin' => 'tiles_context_reaction_block',
-    ),
-  );
-  return $registry;
 }
 
 /**
  * Implements hook_page_build().
  */
 function tiles_page_build(&$page) {
-  if ($plugin = context_get_plugin('reaction', 'tiles')) {
-    // Make sure context_reaction_block properly rebuilds block list.
-    drupal_static_reset('context_reaction_block_list');
-
-    $plugin->execute($page);
+  $container = tiles_get_container('region');
+  $layout = $container->getLayout(current_path());
+  if ($layout) {
+    $container->buildPage($page, $layout);
   }
 
   // Add block weight to all blocks.
-  $context = _tiles_get_active_context();
   foreach (element_children($page) as $region_key) {
     foreach (element_children($page[$region_key]) as $block_key) {
       // Only set the width of the block if it is not already set.
       if (isset($page[$region_key][$block_key]['#block'])) {
         $block = $page[$region_key][$block_key]['#block'];
-          $page[$region_key][$block_key]['#block']->width = tiles_get_width($block->module, $block->delta, ($context ? $context->name : NULL));
+        if (!isset($block->width)) {
+          $page[$region_key][$block_key]['#block']->width = tiles_get_width($block->module, $block->delta);
+        }
+        if (!isset($block->offset)) {
+          // @todo: figure out a saner defaults for offsets.
+          $block->offset = 0;
+        }
       }
     }
   }
@@ -231,65 +263,37 @@ function tiles_page_build(&$page) {
 
 /**
  * Implements hook_page_alter().
- *
  */
 function tiles_page_alter(&$page) {
+  // Don't alter page if loading media modal window.
+  // @todo: need an abstract way of handling content where tiles shouldn't be
+  // active.
+  if (current_path() == 'media/browser') {
+    return;
+  }
+
+  $container = tiles_get_container('region');
   foreach (element_children($page) as $region_key) {
     // Allow regions to bypass block wrapping.
     if (in_array($region_key, variable_get('tiles_skip_regions', array()))) {
       continue;
     }
 
-    tiles_region_wrap($page[$region_key]);
+    $container->wrapRegion($page[$region_key]);
   }
-}
 
-/**
- * Wraps blocks that belong to page regions in tile specific wrappers.
- */
-function tiles_region_wrap(&$region) {
-  $max_cols_per_row = tiles_get_max_step();
-
-  // Make sure blocks are properly sorted.
-  unset($region['#sorted']);
-  $region_children = element_children($region, TRUE);
-
-  $col_count = $row = 0;
-  $row_key = 'row_' . $row;
-
-  $region['#original'] = array();
-  $region['rows'] = array('#theme_wrappers' => array('tiles_region'));
-  $region['rows'][$row_key] = array('#theme_wrappers' => array('tiles_row'));
-
-  foreach ($region_children as $delta) {
-
-    // Only operate on blocks.
-    if (!array_key_exists('#block', $region[$delta])) {
-      continue;
-    }
-
-    $block = $region[$delta]['#block'];
-    $width = $block->width;
-
-    if (($col_count + $width) <= $max_cols_per_row) {
-      $col_count += $width;
-    }
-    else {
-      $col_count = $width;
-      $row_key = 'row_' . ++$row;
-      $region['rows'][$row_key] = array('#theme_wrappers' => array('tiles_row'));
-    }
-
-    // Add block to current row.
-    $region['rows'][$row_key][$delta] = $region[$delta];
-    $region['rows'][$row_key][$delta]['#theme_wrappers'][] = 'tiles_tile';
-
-    // Stash the block in the #original key.
-    $region['#original'][$delta] = $region[$delta];
-
-    // Remove block from old position in region.
-    unset($region[$delta]);
+  // Add breakpoints indicator. Don't show when on a media overlay or if there
+  // is only one breakpoint.
+  if (user_access('arrange tiles') && $page['#theme'] != 'media_dialog_page'
+    && !path_is_admin(current_path())
+    && count(tiles_get_breakpoints()) > 1
+  ) {
+    $page['page_bottom']['breakpoints_indicator'] = array(
+      '#theme' => 'breakpoints_indicator',
+      '#breakpoints' => tiles_get_breakpoints(),
+    );
   }
+
 }
 
 /**
@@ -309,6 +313,16 @@ function tiles_preprocess_block(&$variables) {
     $variables['attributes_array']['data-module'] = $block->module;
     $variables['attributes_array']['data-delta'] = $block->delta;
     $variables['attributes_array']['data-width'] = $block->width;
+    $variables['attributes_array']['data-offset'] = $block->offset;
+
+    // Add widths for each of the breakpoints.
+    $default_breakpoint = tiles_get_default_breakpoint();
+    $default_width = isset($block->breakpoints[$default_breakpoint]) ? $block->breakpoints[$default_breakpoint] : tiles_get_max_step();
+    $breakpoints = tiles_get_breakpoints();
+    foreach ($breakpoints as $key => $value) {
+      $width = isset($block->breakpoints[$key]) ? $block->breakpoints[$key] : $default_width;
+      $variables['attributes_array']['data-width-' . $key] = $width;
+    }
 
     // Load bean type if block is a bean. Used in
     // tiles_contextual_links_view_alter() to display the bean type in
@@ -353,7 +367,7 @@ function tiles_tiles_info() {
     // Add all bean types that the current user has permission to edit.
     $types = bean_get_types();
     foreach ($types as $k => $v) {
-      if (user_access('administer beans') || user_access("view any $k bean")) {
+      if (user_access('administer beans') || user_access("create any $k bean")) {
         $tiles['bean types'][] = $k;
       }
     }
@@ -368,21 +382,52 @@ function tiles_contextual_links_view_alter(&$element, $items) {
   // Remove configure block link for all blocks.
   // @todo: make this a setting?
   if (isset($element['#element']['#block'])) {
+    $block = $element['#element']['#block'];
     unset($element['#links']['block-configure']);
 
     // Remove the delete link for system main block.
-    if ($element['#element']['#block']->module == 'system' && $element['#element']['#block']->delta == 'main') {
+    if ($block->module == 'system' && $block->delta == 'main') {
       unset($element['#links']['block-delete']);
     }
 
+    // Alter the bean edit link to pass in current tile layout in order to get
+    // the proper indexable state. Recent versions of bean_block_view() adds
+    // a contextual link directly to the edit page, which prevents the correct
+    // contextual link id from being created (bean- instead of bean-edit). Need
+    // to check for both to handle both versions of bean.module.
+    // @see https://www.drupal.org/node/1691482#comment-8427861
+    if (isset($element['#links']['bean-edit']) && isset($element['#element']['#block']->tid)) {
+      $element['#links']['bean-edit']['query']['tid'] = $element['#element']['#block']->tid;
+    }
+    if (isset($element['#links']['bean-']) && isset($element['#element']['#block']->tid)) {
+      $element['#links']['bean-']['query']['tid'] = $element['#element']['#block']->tid;
+    }
+
     // Add block type to links.
-    if ($element['#element']['#block']->module == 'bean') {
-      $element['#links'] = array(
+    if ($block->module == 'bean' && tiles_is_tile('bean', $block->delta) && user_access('arrange tiles')) {
+      $links = array(
         'bean-type' => array(
           'title' => $element['#element']['#block']->bean_type,
           'href' => current_path(),
         ),
-      ) + $element['#links'];
+      );
+
+      if (isset($element['#element']['bean'])) {
+        $delta = current(element_children($element['#element']['bean']));
+        if (isset($element['#element']['bean'][$delta]['#entity'])) {
+          $bean = $element['#element']['bean'][$delta]['#entity'];
+          if (isset($bean->bean_style)) {
+            $styles = bean_style_get_styles();
+
+            $links['bean-style'] = array(
+              'title' => 'Style: ' . $styles[$bean->bean_style]['label'],
+              'href' => current_path(),
+            );
+          }
+        }
+      }
+
+      $element['#links'] = $links + $element['#links'];
     }
   }
 }
@@ -404,49 +449,155 @@ function tiles_node_insert($node) {
   // Allow tiles to be setup programmatically by assigning appropriate blocks to
   // the 'tiles' property on the node object.
   if (isset($node->tiles)) {
-    $context = tiles_get_context('path', 'node/' . $node->nid);
-    tiles_assign_tiles($context, $node->tiles);
+    $layout = tiles_get_container('region')->getLayout('node/' . $node->nid);
+    foreach ($node->tiles as $tile) {
+      $layout->addBlock($tile);
+    }
+    $layout->save();
+  }
+}
+
+/**
+ * Implements hook_node_update_index().
+ *
+ * Adds tiles that are configured to be indexed with nodes to search index.
+ */
+function tiles_node_update_index($node) {
+  $content = '';
+
+  $container = tiles_get_container('region');
+  $layout = $container->getLayout('node/' . $node->nid);
+  if ($layout) {
+    $content = tiles_index_layout($layout);
+    $content = drupal_render($content);
+  }
+
+  return $content;
+}
+
+/**
+ * Implements hook_node_view().
+ */
+function tiles_node_view($node, $view_mode, $langcode) {
+  // Add indexable blocks to nodes during search view.
+  if ($view_mode == 'search_result') {
+    $container = tiles_get_container('region');
+    $layout = $container->getLayout('node/' . $node->nid);
+    if ($layout) {
+      $node->content['tiles_build'] = tiles_index_layout($layout);
+    }
+  }
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ *
+ * Need to fix tiles.module so that all bean form alters affect tiles forms as
+ * well.
+ */
+function tiles_form_tiles_add_form_alter(&$form, $form_state) {
+  if (isset($form['bean_form'])) {
+    tiles_form_bean_form_alter($form['bean_form'], $form_state, 'tiles_add_form', $form_state['layout']);
   }
 }
 
 /**
  * Implements hook_form_FORM_ID_alter().
  */
-function tiles_form_bean_delete_confirm_alter(&$form, $form_state) {
-  // Add callback to delete bean from context.
-  if (isset($_GET['destination'])) {
-    $form['#context'] = 'tiles-' . _tiles_normalize_path($_GET['destination']);
-    $form['#submit'][] = 'tiles_delete_submit';
+function tiles_form_bean_form_alter(&$form, $form_state, $form_id, $layout = NULL) {
+  // Remove block label from title field.
+  $form['title']['#description'] = str_replace('block', 'tile', $form['title']['#description']);
+
+  // Only show if user has access to set indexable state on bean.
+  if (!user_access('set tile indexable status')) {
+    return;
   }
+
+  // Context has the possibility of being set through query string.
+  if (!$layout && isset($_GET['tid']) && is_numeric($_GET['tid'])) {
+    $layout = entity_load_single('tile_layout', $_GET['tid']);
+  }
+
+  // Index state can only be set if editing a bean within a layout.
+  if (!$layout) {
+    return;
+  }
+
+  // Add layout and submit handler. This will only effect bean forms, not tiles
+  // add forms, since tiles add forms don't use the bean form submit handlers.
+  $form['layout'] = array(
+    '#type' => 'value',
+    '#value' => $layout,
+  );
+  $form['actions']['submit']['#submit'][] = 'tiles_form_bean_form_submit';
+
+  // @todo: need to move this to new API.
+  if (isset($form_state['bean']->delta)) {
+    $indexable = tiles_get_indexable('bean', $form_state['bean']->delta, $layout->tid);
+  }
+  else {
+    $index_defaults = variable_get('tiles_bean_type_index_defaults', array());
+    if (isset($index_defaults[$form_state['bean']->type])) {
+      $indexable = (bool) $index_defaults[$form_state['bean']->type];
+    }
+  }
+
+  $form['indexable'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Include this tile in the search index'),
+    '#description' => t("If checked, the content of this tile will be a part of the search index entry for this tile's page."),
+    '#access' => user_access('set tile indexable status'),
+    '#default_value' => isset($indexable) ? $indexable : FALSE,
+    '#weight' => 10,
+  );
+}
+
+/**
+ * Submit handler for bean form.
+ *
+ * Saves indexable state for bean edits.
+ */
+function tiles_form_bean_form_submit($form, &$form_state) {
+  $bean = $form_state['values']['bean'];
+  $layout = $form_state['values']['layout'];
+  tiles_set_indexable('bean', $bean->delta, $form_state['values']['indexable'], $layout->tid);
+
+  // Attempt to mark destination path from layout as needing reindexing from
+  // solr. Currently only supports region layouts (with path).
+  tiles_indexable_mark($layout);
 }
 
 /**
  * Implements hook_bean_access().
+ *
+ * @todo: remove dependency on context.
  */
 function tiles_bean_access($bean, $op, $account) {
   // Tie tile based beans visibility to menu access.
-  if ($bean && $op == 'view' && ($context = _tiles_get_active_context()) && isset($context->reactions['tiles']['blocks'])) {
+  // if ($bean && $op == 'view' && ($context = _tiles_get_active_context()) && isset($context->reactions['tiles']['blocks'])) {
 
-    if (array_key_exists('bean-' . $bean->delta, $context->reactions['tiles']['blocks'])) {
-      $item = menu_get_item(current_path());
-      return $item['access'] && current_path() != variable_get('site_403', FALSE) && user_access('view any ' . $bean->type . ' bean');
-    }
-  }
+  //   if (array_key_exists('bean-' . $bean->delta, $context->reactions['tiles']['blocks'])) {
+  //     $item = menu_get_item(current_path());
+  //     return $item['access'] && current_path() != variable_get('site_403', FALSE) && user_access('view any ' . $bean->type . ' bean');
+  //   }
+  // }
 }
 
 /**
  * Implements hook_block_view_alter().
+ *
+ * @todo: remove dependency on context.
  */
 function tiles_block_view_alter(&$data, $block) {
   // Tie tile based block visibility to menu access.
-  if (($context = _tiles_get_active_context()) && isset($context->reactions['tiles']['blocks'])) {
-    if (array_key_exists($block->module . '-' . $block->delta, $context->reactions['tiles']['blocks'])) {
-      $item = menu_get_item();
-      if (!$item['access']) {
-        $data['content'] = '';
-      }
-    }
-  }
+  // if (($context = _tiles_get_active_context()) && isset($context->reactions['tiles']['blocks'])) {
+  //   if (array_key_exists($block->module . '-' . $block->delta, $context->reactions['tiles']['blocks'])) {
+  //     $item = menu_get_item();
+  //     if (!$item['access']) {
+  //       $data['content'] = '';
+  //     }
+  //   }
+  // }
 }
 
 /**
@@ -454,8 +605,44 @@ function tiles_block_view_alter(&$data, $block) {
  */
 function tiles_page_delivery_callback_alter(&$callback) {
   if (isset($_SERVER['HTTP_X_TILES']) && $_SERVER['HTTP_X_TILES']) {
-    $callback = 'tiles_page_deliver_tile_region';
+    if (($container = tiles_get_container($_SERVER['HTTP_X_TILES']))) {
+      $callback = 'tiles_handle_callback_request';
+    }
   }
+}
+
+/**
+ * Implements hook_tiles_container_info().
+ */
+function tiles_tiles_container_info() {
+  return array(
+    'region' => 'TilesRegionContainer',
+  );
+}
+
+/**
+ * Implements hook_bean_delete().
+ *
+ * Respond to bean deletions by removing block from tiles layouts.
+ */
+function tiles_bean_delete($bean) {
+  db_delete('tile_layout_blocks')
+    ->condition('module', 'bean')
+    ->condition('delta', $bean->delta)
+    ->execute();
+
+  // Clear block and page cache.
+  cache_clear_all();
+}
+
+/**
+ * Implements hook_bean_cache_clear().
+ *
+ * Clear all caches when bean cache is cleared, in order for new bean content to
+ * show on cached pages.
+ */
+function tiles_bean_cache_clear() {
+  cache_clear_all();
 }
 
 /**
@@ -493,8 +680,15 @@ function tiles_get_tile_types() {
  * Useful when showing a list of available blocks/types in an option form.  For
  * example, see tiles_add_form(). Also checks if current user has access to edit
  * bean types.
+ *
+ * @param array $tiles
+ *   Array of block/bean types as returned from tiles_get_tile_types().
+ *
+ *
+ * @return array
+ *   Array of key/value types for use in a select form element.
  */
-function tiles_get_tile_types_options() {
+function tiles_get_tile_types_options($tiles) {
   $tiles_options = &drupal_static(__FUNCTION__, array());
 
   if (empty($tiles_options)) {
@@ -502,8 +696,6 @@ function tiles_get_tile_types_options() {
       'blocks' => array(),
       'bean types' => array(),
     );
-
-    $tiles = tiles_get_tile_types();
 
     // Add labels to blocks.
     foreach ($tiles['blocks'] as $slug) {
@@ -530,6 +722,9 @@ function tiles_get_tile_types_options() {
         }
       }
     }
+
+    asort($tiles_options['bean types']);
+    asort($tiles_options['blocks']);
   }
 
   return $tiles_options;
@@ -575,40 +770,93 @@ function tiles_is_tile($module, $delta) {
 }
 
 /**
- * Inserts or updates the block width.
+ * Inserts or updates the block index state.
  *
  * @param string $module
  *   The module the block belongs to.
  * @param string $delta
  *   The delta of the block
- * @param string $context_id
- *   The context in which to find the block width.  Will default to a `global`
- *   context if NULL.
+ * @param string $tid
+ *   The TileLayout id.
  */
-function tiles_set_width($module, $delta, $width, $context_id) {
-  $bid = tiles_block_get_bid($module, $delta);
-  if ($bid) {
-    $check = db_query("SELECT bid FROM {tiles_width} WHERE context_id = :context_id AND bid = :bid", array(
-      ':context_id' => $context_id,
-      ':bid' => $bid,
-    ))->fetchField();
+function tiles_set_indexable($module, $delta, $indexable, $tid) {
+  db_update('tile_layout_blocks')
+    ->fields(array(
+      'indexable' => $indexable,
+    ))
+    ->condition('tid', $tid)
+    ->condition('module', $module)
+    ->condition('delta', $delta)
+    ->execute();
+}
 
-    $values = array(
-      'context_id' => $context_id,
-      'bid' => $bid,
-      'width' => $width,
-    );
-    if ($check) {
-      drupal_write_record('tiles_width', $values, array('context_id', 'bid'));
+/**
+ * Returns a block's search index status.
+ *
+ * @param string $module
+ *   The module the block belongs to.
+ * @param string $delta
+ *   The delta of the block
+ * @param string $tid
+ *   The TileLayout id.
+ */
+function tiles_get_indexable($module, $delta, $tid) {
+  $indexable = db_query("
+    SELECT indexable
+    FROM {tile_layout_blocks}
+    WHERE tid = :tid
+    AND module = :module
+    AND delta = :delta
+  ", array(
+    ':tid' => $tid,
+    ':module' => $module,
+    ':delta' => $delta,
+  ))->fetchField();
+
+  if ($indexable !== FALSE) {
+    return (bool) $indexable;
+  }
+
+  // Otherwise use defaults for bean type.
+  $bean = bean_load_delta($delta);
+  $index_defaults = variable_get('tiles_bean_type_index_defaults', array());
+  if (isset($index_defaults[$bean->type])) {
+    return (bool) $index_defaults[$bean->type];
+  }
+
+  return FALSE;
+}
+
+/**
+ * Attempts to mark destination path form layout as needing reindexing.
+ *
+ * Checks both apachesolr and core search. Currently only supports region
+ * layouts (with path).
+ */
+function tiles_indexable_mark($layout) {
+  if ($layout->container == 'region') {
+    $path = $layout->selector;
+    // Handle special case of taxonomy terms. Most other entities use the entity
+    // type as the first path part (e.g. "node/x"), but taxonomy terms are
+    // "special" and use "taxonomy/term/x", so require special handling.
+    if (preg_match('#taxonomy/term/([0-9+])#', $path, $matches)) {
+      $parts = array(
+        'taxonomy_term',
+        $matches[1],
+      );
     }
     else {
-      drupal_write_record('tiles_width', $values);
+      $parts = explode('/', $path);
+    }
+
+    if (module_exists('apachesolr')) {
+      apachesolr_mark_entity($parts[0], $parts[1]);
+    }
+    if (module_exists('search') && $parts[0] == 'node') {
+      search_touch_node($parts[1]);
     }
   }
-  else {
-    // Something went wrong with finding the bid.
-    // @todo: should have proper error handling here.
-  }
+  module_invoke_all('tiles_indexable_mark', $layout);
 }
 
 /**
@@ -616,25 +864,12 @@ function tiles_set_width($module, $delta, $width, $context_id) {
  *
  * The block's width is determined by:
  * - Checking for values from hook_tiles_widths().
- * - Checking if it is an ombublock that has a width value. (overwrites
- *   previous)
  * - Setting to default if none of the above produced a width.
  *
  * @return int $width
  */
-function tiles_get_width($module, $delta, $context_id) {
-  // Pull in the width of the block from the given context
-  $bid = tiles_block_get_bid($module, $delta);
-  $width = db_query("SELECT width FROM {tiles_width} WHERE context_id = :context_id AND bid = :bid LIMIT 1", array(
-    ':context_id' => $context_id,
-    ':bid' => $bid,
-  ))->fetchField();
-
-  if ($width) {
-    return $width;
-  }
-
-  // Otherwise see if any hook_tiles_widths defines the width for this block.
+function tiles_get_width($module, $delta) {
+  // See if any hook_tiles_widths defines the width for this block.
   $tiles_widths = module_invoke_all('tiles_widths');
   if (isset($tiles_widths[$module][$delta])) {
     return (int) $tiles_widths[$module][$delta];
@@ -642,17 +877,6 @@ function tiles_get_width($module, $delta, $context_id) {
 
   // Default to max width.
   return tiles_get_max_step();
-}
-
-/**
- * Gets the bid of a block based on module, delta and theme.
- */
-function tiles_block_get_bid($module, $delta, $theme = NULL) {
-  return db_query("SELECT bid FROM {block} WHERE module = :module AND delta = :delta AND theme = :theme", array(
-    ':module' => $module,
-    ':delta' => $delta,
-    ':theme' => $theme ? $theme : variable_get('theme_default', ''),
-  ))->fetchField();
 }
 
 /**
@@ -685,131 +909,94 @@ function tiles_get_max_step() {
 }
 
 /**
- * Returns a tiles-enabled context.
- *
- * Either creates a new context based on a path, or returns an existing context.
- * Whether a context is retrieved base on the path depends on the type flag.
+ * Gets the breakpoints for the current theme.
+ */
+function tiles_get_breakpoints($theme = NULL) {
+  // Default to default frontend theme.
+  if (!$theme) {
+    $theme = variable_get('theme_default', NULL);
+  }
+  $breakpoints = theme_get_setting('tiles_breakpoints', $theme);
+
+  // If no theme has defined steps, default to bootstrap steps.
+  if (!$breakpoints) {
+    $breakpoints = array('default' => 'default');
+  }
+
+  return $breakpoints;
+}
+
+/**
+ * Gets the default (last) breakpoint.
+ */
+function tiles_get_default_breakpoint() {
+  $breakpoints = tiles_get_breakpoints();
+  end($breakpoints);
+  return key($breakpoints);
+}
+
+/**
+ * Returns the appropriate tiles container given a type.
  *
  * @param string $type
- *   The type of context to retrieve, can be one of:
- *   - 'context': A context id.
- *   - 'path': The path used to lookup context.
- * @param string $identifier
- *   Either a context id or path, depending on what the $type is.  If $type is
- *   'path' and a context doesn't exist yet for that path, then a new one will
- *   be created.
+ *   The type of container to return. Defaults to the 'region' type that is
+ *   implemented by this module.
  *
- * @return object
- *   The fully loaded context object.
+ * @param TilesContainer $container
+ *   The container object.
  */
-function tiles_get_context($type, $identifier) {
-  switch ($type) {
-    case 'context':
-      return context_load($identifier);
-      break;
+function tiles_get_container($type = 'region') {
+  $containers = tiles_get_containers();
 
-    case 'path':
-      $context_id = 'tiles-' . _tiles_normalize_path($identifier);
-
-      // Check to see if context already exists.
-      if ($context = tiles_get_context('context', $context_id)) {
-        return $context;
-      }
-
-      // If context doesn't already exist, create a new one.
-      return tiles_create_context($identifier);
-      break;
+  if (isset($containers[$type]) && class_exists($containers[$type])) {
+    return new $containers[$type];
   }
+
+  return FALSE;
 }
 
 /**
- * Create a new context for the given path.
+ * Returns a list of tiles containers provided by hook_tiles_container_info().
  *
- * @param string $path
- *   The internal path to create a context for.
- *
- * @return $context
- *   The fully created context object.
+ * @return array
+ *   Array of hook info from hook_tiles_container_info().
  */
-function tiles_create_context($path) {
-  // Create a new context.
-  $context = new stdClass();
+function tiles_get_containers() {
+  $containers = &drupal_static(__FUNCTION__, array());
 
-  // Normalize path and set as context name.
-  $context->name = 'tiles-' . _tiles_normalize_path($path);
-  $context->tag = 'tiles';
-  $context->description = '';
-
-
-  // Make sure system_main is always in the default block array.  That way
-  // the main content block can be orderable within this context (ftw!).
-  $context->reactions['tiles']['blocks']['system-main'] = array(
-    'module' => 'system',
-    'delta' => 'main',
-    'region' => 'content',
-    'weight' => '0',
-  );
-
-  // Set the path as the only condition.
-  $context->conditions = array(
-    'path' => array(
-      'values' => array(
-        $path => $path,
-      ),
-    ),
-  );
-
-  context_save($context);
-
-  return $context;
-}
-
-/**
- * Assign tiles (blocks) to a given context.
- *
- * Updates given context to include blocks in the passed array, or if the blocks
- * are already in the context, updates weights of blocks within context.  Will
- * also update the widths of the blocks if necessary.
- *
- * @param object $context
- *   The tiles context for a given page.
- * @param array $tiles
- *   Array of blocks to be added/updated on the context.  Each block array
- *   should have the following keys:
- *     - module: The module the block belongs to.
- *     - delta: The delta of the block.
- *     - region: The region the block should be added to.
- *     - weight: The weight of the block relative to other blocks in the
- *       region.
- *     - width: The width the block should have for this context.
- *   A properly formatted $tiles array should look like:
- *   @code
- *     $tiles = array(
- *       array(
- *         'module' => 'bean',
- *         'delta' => 'delta1',
- *         'region' => 'content',
- *         'weight' => 10,
- *         'width' => 6,
- *       ),
- *     );
- *   @endcode
- *
- * @return boolean
- *   True on successful context save.
- */
-function tiles_assign_tiles($context, $tiles) {
-  foreach ($tiles as $block) {
-    $block = (array) $block;
-    $slug = $block['module'] . '-' . $block['delta'];
-    $context->reactions['tiles']['blocks'][$slug] = $block;
-
-    if (isset($block['width'])) {
-      tiles_set_width($block['module'], $block['delta'], $block['width'], $context->name);
+  if (empty($containers)) {
+    foreach (module_implements('tiles_container_info') as $module) {
+      $containers = array_merge_recursive($containers, module_invoke($module, 'tiles_container_info'));
     }
+    drupal_alter('tiles_container_info', $containers);
   }
 
-  return context_save($context);
+  return $containers;
+}
+
+/**
+ * Return search indexable render array from tiles layout.
+ */
+function tiles_index_layout(TileLayout $layout) {
+  $content = array();
+
+  foreach ($layout->getAllSortedTiles() as $region => $blocks) {
+    $render = $layout->getRenderTiles($region);
+    // Remove any block that isn't set to be indexable.
+    foreach ($render as $key => $block) {
+      if (empty($block['#block']->indexable)) {
+        unset($render[$key]);
+      }
+      else {
+        // Remove contextual links, since the text will show up in search
+        // results.
+        unset($render[$key]['#contextual_links']);
+      }
+    }
+    $content[] = $render;
+  }
+
+  return $content;
 }
 
 /**
@@ -839,6 +1026,22 @@ function theme_tiles_tile($variables) {
 }
 
 /**
+ * Default implementation of theme_breakpoints_indicator().
+ */
+function theme_breakpoints_indicator($variables) {
+  array_walk($variables['breakpoints'], function(&$item, $key) {
+    $item = array(
+      'data' => $item,
+      'class' => array($key),
+    );
+  });
+  return theme('item_list', array(
+    'items' => array_values($variables['breakpoints']),
+    'attributes' => array('id' => 'breakpoints'),
+  ));
+}
+
+/**
  * Preprocess function for theme_tiles_tile().
  */
 function template_preprocess_tiles_tile(&$variables) {
@@ -851,34 +1054,6 @@ function template_preprocess_tiles_tile(&$variables) {
  */
 
 /**
- * Normalize a menu path for use when saving/loading tiles contexts.
- *
- * @param string $path
- *   A path string, in the form of path/path.
- *
- * @return string
- *   A normalized string for use in context, in the form of path-path.
- */
-function _tiles_normalize_path($path) {
-  return str_replace('/', '-', $path);
-}
-
-/**
- * Get the active context for the current page.
- */
-function _tiles_get_active_context() {
-  // Get the namespace for the active tiles context.
-  $contexts = context_active_contexts();
-  foreach ($contexts as $context) {
-    if ($context->tag == 'tiles') {
-      return $context;
-    }
-  }
-
-  return FALSE;
-}
-
-/**
  * Stub function, handled in js.
  */
 function _tiles_move($block) {
@@ -888,6 +1063,12 @@ function _tiles_move($block) {
  * Stub function, handled in js.
  */
 function _tiles_width($block) {
+}
+
+/**
+ * Stub function, handled in js.
+ */
+function _tiles_visibility($block) {
 }
 
 /**
@@ -917,24 +1098,22 @@ function _tiles_has_block_access() {
  * AJAX Callback: Save the weights and widths of blocks to the current page's context.
  */
 function _tiles_save_tiles() {
-  $params = json_decode(file_get_contents('php://input'));
-
-  if (!empty($params->activeContext)) {
-    $context = tiles_get_context('context', $params->activeContext);
-
-    $return = tiles_assign_tiles($context, $params->blocks);
-
-    return drupal_json_output($return);
-  }
+  // @todo: this should use the save method of the appropriate container object.
+  $result = tiles_get_container($_SERVER['HTTP_X_TILES'])->save();
+  drupal_json_output(array('result' => $result));
+  drupal_exit();
 }
 
 /**
  * Get the available regions for adding new blocks to.
  *
- * @todo: this should be hookable.
+ * @param string $type
+ *   The TilesContainer type from which to get regions.
+ * @param string $context_name
+ *   The context name to which tiles are being added.
  */
-function _tiles_get_regions() {
-  return system_region_list(variable_get('theme_default', NULL));
+function _tiles_get_regions($type = 'region', $context_name = '') {
+  return tiles_get_container($type)->getRegions($context_name);
 }
 
 /**
@@ -948,126 +1127,32 @@ function _tiles_js_init() {
     drupal_add_css(drupal_get_path('module', 'tiles') . '/css/tiles.css');
     drupal_add_js(drupal_get_path('module', 'tiles') . '/js/tiles.js');
 
-    $context = _tiles_get_active_context();
-    if ($context) {
-      drupal_add_js(array(
-        'tiles' => array(
-          'active_context' => $context->name,
-          'steps' => tiles_get_steps(),
-          'stepsKeys' => array_keys(tiles_get_steps()),
-        ),
-      ), 'setting');
-    }
+    // Build a list for all available tiles containers for use in region
+    // selectors.
+    $type_selectors = join(',', array_map(function($selector) {
+      return '[data-type="' . $selector . '"]';
+    }, array_keys(tiles_get_containers())));
+
+    $settings = array(
+      'tiles' => array(
+        'breakpoints' => tiles_get_breakpoints(),
+        'steps' => tiles_get_steps(),
+        'stepsKeys' => array_keys(tiles_get_steps()),
+        'typeSelectors' => $type_selectors,
+      ),
+    );
+    $settings['tiles']['selector'] = current_path();
+
+    drupal_add_js($settings, 'setting');
 
     $initialized = TRUE;
   }
 }
 
 /**
- * Delivery callback for Tiles reordering.
- *
- * @param $page_callback_result
- *   The result of a page callback. Can be one of:
- *   - NULL: to indicate no content.
- *   - An integer menu status constant: to indicate an error condition.
- *   - A string of HTML content.
- *   - A renderable array of content.
- *
- * @see drupal_deliver_html_page()
+ * Routes page callback request with X-TILES header to appropriate container
+ * object.
  */
-function tiles_page_deliver_tile_region($page_callback_result) {
-  // Emit the correct charset HTTP header, but not if the page callback
-  // result is NULL, since that likely indicates that it printed something
-  // in which case, no further headers may be sent, and not if code running
-  // for this page request has already set the content type header.
-  if (isset($page_callback_result) && is_null(drupal_get_http_header('Content-Type'))) {
-    drupal_add_http_header('Content-Type', 'text/html; charset=utf-8');
-  }
-
-  // Menu status constants are integers; page content is a string or array.
-  if (is_int($page_callback_result)) {
-    // Let drupal_deliver_html_page() handle errors.  The calling code should
-    // check the response header.
-    return drupal_deliver_html_page($page_callback_result);
-  }
-  elseif (isset($page_callback_result)) {
-    // Print anything besides a menu constant, assuming it's not NULL or
-    // undefined.
-    print tiles_render_region($page_callback_result);
-  }
-
-  // Perform end-of-request tasks.
-  drupal_page_footer();
-}
-
-/**
- * Render the appropriate section for Tiles requests.
- *
- * @param $page
- *   The result of a page callback.  Should be a renderable array of content.
- */
-function tiles_render_region($page) {
-  $params = json_decode(file_get_contents('php://input'));
-
-  // Build up proper regions.
-  tiles_prerender_page($page);
-
-  // Focus on a specific region.
-  $region = $page[$params->region];
-
-  // Pull out old build array before blocks have been added to rows.
-  $region = $region['#original'];
-  foreach ($params->blocks as $block) {
-    $region[$block->module . '_' . $block->delta]['#weight'] = $block->weight;
-    $region[$block->module . '_' . $block->delta]['#block']->width = $block->width;
-  }
-
-  $page = array(
-    $params->region => $region,
-  );
-
-  // Rebuild blocks into tile rows.
-  tiles_page_alter($page);
-
-  print drupal_render($page);
-}
-
-/**
- * Prerenders a drupal page array.
- *
- * Copied from drupal_render_page(), executes everything up to the actual
- * rendering of the page array.
- *
- * @param $page
- *   A string or array representing the content of a page. The array consists of
- *   the following keys:
- *
- * @see drupal_render_page()
- */
-function tiles_prerender_page(&$page) {
-  $main_content_display = &drupal_static('system_main_content_added', FALSE);
-
-  // Allow menu callbacks to return strings or arbitrary arrays to render.
-  // If the array returned is not of #type page directly, we need to fill
-  // in the page with defaults.
-  if (is_string($page) || (is_array($page) && (!isset($page['#type']) || ($page['#type'] != 'page')))) {
-    drupal_set_page_content($page);
-    $page = element_info('page');
-  }
-
-  // Modules can add elements to $page as needed in hook_page_build().
-  foreach (module_implements('page_build') as $module) {
-    $function = $module . '_page_build';
-    $function($page);
-  }
-  // Modules alter the $page as needed. Blocks are populated into regions like
-  // 'sidebar_first', 'footer', etc.
-  drupal_alter('page', $page);
-
-  // If no module has taken care of the main content, add it to the page now.
-  // This allows the site to still be usable even if no modules that
-  // control page regions (for example, the Block module) are enabled.
-  if (!$main_content_display) {
-    $page['content']['system_main'] = drupal_set_page_content();
-  }
+function tiles_handle_callback_request($page_callback_result) {
+  return tiles_get_container($_SERVER['HTTP_X_TILES'])->handleDelivery($page_callback_result);
 }

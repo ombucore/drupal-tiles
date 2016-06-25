@@ -1,3 +1,9 @@
+@z-index-drupal-overlay: 500;
+@z-index-contextual-menu: 1000;
+
+@color-green: rgb(0, 100, 0);
+@color-gray: rgb(136, 136, 136);
+
 /* Basic CSS3 Mixins (not using Toolkit to keep this independent of submodules) PS NO IE SUPPORT!! */
 .gradient(@start: #333333, @stop: #999999) {
   background:@start;
@@ -21,14 +27,16 @@
 /*End Mixins
 ************/
 .tile-overlay {
+  font-family: Helvetica, Arial, sans-serif;
   position: absolute;
   top: 0;
-  left: 0;
-  z-index: 1000; /* +1 than contextual menu */
-  height: 100%;
-  width: 100%;
+  left: 15px;
+  right: 15px;
+  bottom: 0;
+  z-index: @z-index-contextual-menu + 4;
   background-color: #646464;
-  background-color: rgba(100, 100, 100, 0.9);
+  background-color: fade(@color-green, 80);
+  border: 1px solid @color-green;
   .inner { /* Vertical Centering */
     display: table;
     width: 100%;
@@ -40,12 +48,54 @@
     }
   }
 }
+
+.tile-offset {
+  position: absolute;
+  top: 0;
+  left: 15px;
+  bottom: 0;
+  width: 0;
+  background: fade(@color-gray, 50%) url(img/offset-stripes-inactive.png) 0 0 repeat;
+  background-size: 30px auto;
+  opacity: 0.5;
+
+  .dragging > &, .resizing > & {
+    background-color: fade(@color-green, 50%);
+    background-image: url(img/offset-stripes-active.png);
+  }
+}
+
+.offset-metrics(@offset-width, @tile-width) {
+  .col-lg-offset-@{offset-width}.col-lg-@{tile-width} > .tile-offset {
+    margin-left: percentage((@offset-width/12) / (@tile-width/12)) * -1;
+    width: percentage((@offset-width/12) / (@tile-width/12));
+  }
+}
+
+.offset-metrics( 1,  1); .offset-metrics( 2,  1); .offset-metrics( 3,  1); .offset-metrics( 4,  1); .offset-metrics( 5,  1); .offset-metrics( 6,  1); .offset-metrics( 7,  1); .offset-metrics( 8,  1); .offset-metrics( 9,  1); .offset-metrics(10,  1); .offset-metrics(11,  1); .offset-metrics(12,  1);
+.offset-metrics( 1,  2); .offset-metrics( 2,  2); .offset-metrics( 3,  2); .offset-metrics( 4,  2); .offset-metrics( 5,  2); .offset-metrics( 6,  2); .offset-metrics( 7,  2); .offset-metrics( 8,  2); .offset-metrics( 9,  2); .offset-metrics(10,  2); .offset-metrics(11,  2); .offset-metrics(12,  2);
+.offset-metrics( 1,  3); .offset-metrics( 2,  3); .offset-metrics( 3,  3); .offset-metrics( 4,  3); .offset-metrics( 5,  3); .offset-metrics( 6,  3); .offset-metrics( 7,  3); .offset-metrics( 8,  3); .offset-metrics( 9,  3); .offset-metrics(10,  3); .offset-metrics(11,  3); .offset-metrics(12,  3);
+.offset-metrics( 1,  4); .offset-metrics( 2,  4); .offset-metrics( 3,  4); .offset-metrics( 4,  4); .offset-metrics( 5,  4); .offset-metrics( 6,  4); .offset-metrics( 7,  4); .offset-metrics( 8,  4); .offset-metrics( 9,  4); .offset-metrics(10,  4); .offset-metrics(11,  4); .offset-metrics(12,  4);
+.offset-metrics( 1,  5); .offset-metrics( 2,  5); .offset-metrics( 3,  5); .offset-metrics( 4,  5); .offset-metrics( 5,  5); .offset-metrics( 6,  5); .offset-metrics( 7,  5); .offset-metrics( 8,  5); .offset-metrics( 9,  5); .offset-metrics(10,  5); .offset-metrics(11,  5); .offset-metrics(12,  5);
+.offset-metrics( 1,  6); .offset-metrics( 2,  6); .offset-metrics( 3,  6); .offset-metrics( 4,  6); .offset-metrics( 5,  6); .offset-metrics( 6,  6); .offset-metrics( 7,  6); .offset-metrics( 8,  6); .offset-metrics( 9,  6); .offset-metrics(10,  6); .offset-metrics(11,  6); .offset-metrics(12,  6);
+.offset-metrics( 1,  7); .offset-metrics( 2,  7); .offset-metrics( 3,  7); .offset-metrics( 4,  7); .offset-metrics( 5,  7); .offset-metrics( 6,  7); .offset-metrics( 7,  7); .offset-metrics( 8,  7); .offset-metrics( 9,  7); .offset-metrics(10,  7); .offset-metrics(11,  7); .offset-metrics(12,  7);
+.offset-metrics( 1,  8); .offset-metrics( 2,  8); .offset-metrics( 3,  8); .offset-metrics( 4,  8); .offset-metrics( 5,  8); .offset-metrics( 6,  8); .offset-metrics( 7,  8); .offset-metrics( 8,  8); .offset-metrics( 9,  8); .offset-metrics(10,  8); .offset-metrics(11,  8); .offset-metrics(12,  8);
+.offset-metrics( 1,  9); .offset-metrics( 2,  9); .offset-metrics( 3,  9); .offset-metrics( 4,  9); .offset-metrics( 5,  9); .offset-metrics( 6,  9); .offset-metrics( 7,  9); .offset-metrics( 8,  9); .offset-metrics( 9,  9); .offset-metrics(10,  9); .offset-metrics(11,  9); .offset-metrics(12,  9);
+.offset-metrics( 1, 10); .offset-metrics( 2, 10); .offset-metrics( 3, 10); .offset-metrics( 4, 10); .offset-metrics( 5, 10); .offset-metrics( 6, 10); .offset-metrics( 7, 10); .offset-metrics( 8, 10); .offset-metrics( 9, 10); .offset-metrics(10, 10); .offset-metrics(11, 10); .offset-metrics(12, 10);
+.offset-metrics( 1, 11); .offset-metrics( 2, 11); .offset-metrics( 3, 11); .offset-metrics( 4, 11); .offset-metrics( 5, 11); .offset-metrics( 6, 11); .offset-metrics( 7, 11); .offset-metrics( 8, 11); .offset-metrics( 9, 11); .offset-metrics(10, 11); .offset-metrics(11, 11); .offset-metrics(12, 11);
+.offset-metrics( 1, 12); .offset-metrics( 2, 12); .offset-metrics( 3, 12); .offset-metrics( 4, 12); .offset-metrics( 5, 12); .offset-metrics( 6, 12); .offset-metrics( 7, 12); .offset-metrics( 8, 12); .offset-metrics( 9, 12); .offset-metrics(10, 12); .offset-metrics(11, 12); .offset-metrics(12, 12);
+
+.visibility-options {
+  padding: 0 10px 20px 40px;
+  color: white;
+}
 .overlay-open .tile-overlay {
-  z-index: 499; // -1 than Drupal overlay.
+  z-index: @z-index-drupal-overlay - 1; // -1 than Drupal overlay.
 }
 
 .dragging.tile {
   position: relative;
+  min-height: 200px;
   [class*=move] {
     background-image: url(img/sprite.png);
     background-color: transparent;
@@ -56,6 +106,15 @@
     margin-top: -21px;
     text-indent: -9999px;
     border: 0;
+    padding: 0;
+    border-radius: 0;
+  }
+  .offset-menu {
+    margin: -40px auto 0;
+    width: auto;
+    display: block;
+    font-size: 14px;
+    text-align: center;
   }
   .move-left {
     background-position: -1px -48px;
@@ -118,6 +177,7 @@
   }
 }
 .contextual-links {
+  .bean-style >a,
   .bean-type >a {/*Displays type of Bean at top of contextual menu. */
     font-style: italic;
     color: #bbb !important;
@@ -127,22 +187,140 @@
 }
 
 // hilights all regions during dragging
-// TODO: only the region of the dragging block should be hilighted
-.dragging div[data-type='region'] {
-  border: 2px dotted green;
+[data-type="region"], .container.content {
+  position: relative;
+
+  &.dragging, &.resizing {
+    z-index: @z-index-contextual-menu + 2;
+  }
+
+  &.resizing .tile:not(.resizing),
+  &.dragging .tile:not(.dragging) {
+    opacity: 0.7;
+
+    &:after {
+      content: '';
+      display: block;
+      position: absolute;
+      z-index: 10;
+      top: 0;
+      left: 15px;
+      right: 15px;
+      bottom: 0;
+      background-color: fade(@color-gray, 80%);
+    }
+  }
+}
+
+.region-overlay {
+  content: '';
+  z-index: @z-index-contextual-menu + 1;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border: 1px solid #999;
+  background-color: fade(#eee, 80);
+
+  [class^="col-"] [data-type="region"] > & {
+    left: -15px;
+    right: -15px;
+  }
+
+  .dragging > &, .resizing > & {
+    background-color: transparent;
+    border-color: @color-green;
+    outline: 15px solid fade(@color-green, 30);
+    z-index: @z-index-contextual-menu + 3;
+  }
+}
+
+[data-type="region"][data-name="section"] {
+  > .region-overlay, > .region-name {
+    display: none;
+  }
+}
+
+.region-grid {
+  display: none;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding-left: inherit;
+  padding-right: inherit;
+  z-index: @z-index-contextual-menu + 1;
+
+  .row, .col, .column {
+    height: 100%;
+  }
+
+  .column {
+    min-height: 10px;
+    background-color: fade(@color-green, 8%);
+  }
+
+  .dragging > &, .resizing > & {
+    display: block;
+  }
+}
+
+.region-name {
+  @label-height: 34px;
+  @label-background-color: rgb(100, 100, 100);
+  display: block;
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: @label-height;
+  padding: 0 0.75em;
+  font-family: Helvetica, Arial, sans-serif;
+  text-transform: none;
+  font-size: 12px;
+  line-height: @label-height;
+  color: lighten(@label-background-color, 50);
+  background-color: @label-background-color;
+  z-index: @z-index-contextual-menu + 2;
+
+  &:before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 100%;
+    bottom: 0;
+    width: 0;
+    height: 0;
+    border-style: solid;
+    border-width: @label-height / 2 0 @label-height / 2 @label-height / 4;
+    border-color: transparent transparent transparent @label-background-color;
+  }
+
+  .dragging > &, .resizing > & {
+    color: white;
+    background-color: @color-green;
+    z-index: @z-index-contextual-menu + 5;
+
+    &:before {
+      border-left-color: @color-green;
+    }
+  }
 }
 
 .resizing.tile {
   position: relative;
+  min-height: 200px;
   .width-minus, .width-plus {
     background-color: transparent;
     position: absolute;
     border: 0;
     color: #FFFFFF;
-    font-size: 60px;
-    line-height: 60px;
+    font-size: 44px;
+    line-height: 50px;
     top: 50%;
-    margin-top: -30px;
+    margin-top: -50px;
+    padding: 0 12px;
     font-family: Arial, sans-serif;
     text-shadow: -1px 0 black, 0 1px black, 1px 0 black, 0 -1px black;
     -moz-text-shadow: -1px 0 black, 0 1px black, 1px 0 black, 0 -1px black;
@@ -152,49 +330,52 @@
     }
   }
   .width-minus {
-    left: 12%;
+    left: 8px;
+    margin-top: -55px;
   }
   .width-plus {
-    right: 12%;
+    right: 8px;
   }
-  .width-current {
-    margin: 0 auto 11px;
+  .width-menu {
+    margin: -40px auto 0;
     width: auto;
     display: block;
-    font-size: 18px;
-    color: #FFFFFF;
+    font-size: 14px;
     text-align: center;
-    text-shadow: -1px 0 black, 0 1px black, 1px 0 black, 0 -1px black;
-    -moz-text-shadow: -1px 0 black, 0 1px black, 1px 0 black, 0 -1px black;
-    -webkit-text-shadow: -1px 0 black, 0 1px black, 1px 0 black, 0 -1px black;
   }
-  .save {
-    margin: 11px auto 0;
-    width: 67px;
-    padding: 5px 0;
-    border: solid 1px #424242;
-    display: block;
-    text-transform: uppercase;
-    font-size: 12px;
-    .gradient(#F3F3F3, #AAAAAA);
-    .border-radius(3px);
-    &:hover {
-      .gradient(#AAAAAA, #F3F3F3);
+  .save-cancel-wrapper {
+    position: absolute;
+    bottom: 24px;
+    width: 100%;
+    text-align: center;
+    .save {
+      margin: 0 0 0 8px;
+      width: 67px;
+      padding: 5px 0;
+      border: solid 1px #424242;
+      display: inline-block;
+      text-transform: uppercase;
+      font-size: 12px;
+      .gradient(#F3F3F3, #AAAAAA);
+      .border-radius(3px);
+      &:hover {
+        .gradient(#AAAAAA, #F3F3F3);
+      }
     }
-  }
-  .cancel {
-    margin: 10px auto 0;
-    width: 67px;
-    text-align: center;
-    text-transform: uppercase;
-    color: white;
-    text-decoration: underline;
-    display: block;
-    font-size: 12px;
-    cursor: pointer;
-    .transition(color);
-    &:hover {
-      color: darken(#fff, 5%);
+    .cancel {
+      margin: 0;
+      width: 67px;
+      text-align: center;
+      text-transform: uppercase;
+      color: white;
+      text-decoration: underline;
+      display: inline-block;
+      font-size: 12px;
+      cursor: pointer;
+      .transition(color);
+      &:hover {
+        color: darken(#fff, 5%);
+      }
     }
   }
 }

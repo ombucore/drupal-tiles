@@ -1,0 +1,81 @@
+<?php
+
+/**
+ * @file
+ * Install hooks for tiles_section.module
+ */
+
+/**
+ * Implements hook_field_schema().
+ */
+function tiles_section_field_schema($field) {
+  $columns = array(
+    'id' => array(
+      'type' => 'int',
+      'unsigned' => TRUE,
+      'not null' => FALSE,
+      'default' => NULL,
+    ),
+    'value' => array(
+      'type' => 'varchar',
+      'length' => $field['settings']['max_length'],
+      'not null' => FALSE,
+    ),
+    'settings' => array(
+      'type' => 'text',
+      'serialize' => TRUE,
+    ),
+  );
+  return array(
+    'columns' => $columns,
+  );
+}
+
+/**
+ * Moves tiles sections off of context.
+ */
+function tiles_section_update_7000() {
+  $contexts = db_query("SELECT * FROM {context} WHERE tag = :tag", array(
+    ':tag' => 'tiles-section',
+  ));
+  foreach ($contexts as $context) {
+    $layout = entity_create('tile_layout', array('container' => 'section'));
+
+    $conditions = unserialize($context->conditions);
+    $layout->selector = key($conditions['tiles_section']['values']);
+
+    $reactions = unserialize($context->reactions);
+    foreach ($reactions['tiles']['blocks'] as $block) {
+      $block = (object) $block;
+
+      // Get width from old widths table.
+      $block->width = db_query("
+        SELECT width
+        FROM {tiles_width}
+        LEFT JOIN {block} USING (bid)
+        WHERE
+          module = :module AND
+          delta = :delta AND
+          theme = :theme
+          AND context_id = :context_id
+        ", array(
+          ':module'     => $block->module,
+          ':delta'      => $block->delta,
+          ':theme'      => variable_get('theme_default', ''),
+          ':context_id' => $context->name,
+        ))->fetchField();
+
+      $layout->addBlock($block);
+    }
+
+    $layout->save();
+    db_query("DELETE FROM {context} WHERE name = :name", array(':name' => $context->name));
+    db_query("DELETE FROM {tiles_width} WHERE context_id = :name", array(':name' => $context->name));
+  }
+
+  // Only delete tiles width table if empty, in order to allow other modules
+  // using tiles as a base to upgrade.
+  if (db_query("SELECT COUNT(*) FROM {tiles_width}")->fetchField() == 0) {
+    db_drop_table('tiles_width');
+  }
+}
