@@ -232,7 +232,7 @@ abstract class TilesContainer {
 
       $block = $region[$delta]['#block'];
       $width = $block->width + $block->offset;
-      while ($width > $max_cols_per_row || $block->width == 1) {
+      while ($width > $max_cols_per_row) {
         $block->width--;
         $width = $block->width + $block->offset;
 
