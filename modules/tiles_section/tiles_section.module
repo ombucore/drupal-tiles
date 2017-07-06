@@ -494,3 +494,29 @@ function tiles_section_add_tile($node, $section) {
     drupal_goto($url, array('query' => array('destination' => $_GET['destination'])));
   }
 }
+
+
+/**
+ * Implements hook_node_update_index().
+ *
+ * Adds tiles that are configured to be indexed with nodes to search index.
+ */
+function tiles_section_node_update_index($node) {
+  $content = '';
+
+  if (isset($node->field_sections[LANGUAGE_NONE])) {
+    $container = tiles_get_container('section');
+    foreach ($node->field_sections[LANGUAGE_NONE] as $section) {
+      $layout = $container->getLayout($node->nid . '-' . $section['id']);
+      if($layout) {
+        $tile_content = tiles_index_layout($layout);
+        if ($tile_content) {
+          $content .= drupal_render($tile_content);
+        }
+      }
+    }
+  }
+
+  return $content;
+}
+

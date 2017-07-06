@@ -563,7 +563,7 @@ function tiles_form_bean_form_submit($form, &$form_state) {
   tiles_set_indexable('bean', $bean->delta, $form_state['values']['indexable'], $layout->tid);
 
   // Attempt to mark destination path from layout as needing reindexing from
-  // solr. Currently only supports region layouts (with path).
+  // solr.
   tiles_indexable_mark($layout);
 }
 
@@ -830,8 +830,7 @@ function tiles_get_indexable($module, $delta, $tid) {
 /**
  * Attempts to mark destination path form layout as needing reindexing.
  *
- * Checks both apachesolr and core search. Currently only supports region
- * layouts (with path).
+ * Checks both apachesolr and core search. 
  */
 function tiles_indexable_mark($layout) {
   if ($layout->container == 'region') {
@@ -854,6 +853,17 @@ function tiles_indexable_mark($layout) {
     }
     if (module_exists('search') && $parts[0] == 'node') {
       search_touch_node($parts[1]);
+    }
+  }
+
+  if (module_exists('tiles_section') && $layout->container == 'section') {
+    list($nid) = explode('-', $layout->selector);
+
+    if (module_exists('apachesolr')) {
+      apachesolr_mark_entity('node', $nid);
+    }
+    if (module_exists('search')) {
+      search_touch_node($nid);
     }
   }
 }
