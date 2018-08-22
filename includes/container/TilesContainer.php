@@ -28,6 +28,16 @@ abstract class TilesContainer {
    *   TileLayout entity for the given selector.
    */
   public function getLayout($selector) {
+
+    // Adds fix for NG RCAssetNumber requirement for resources
+    $re = '/(node\/[0-9]*\?(RCAssetNumber=[0-9]*))/m';
+    $re_replace = '/(\?(RCAssetNumber=[0-9]*))/m';
+
+    // Clean RCAssetNumber from selector.
+    if (preg_match($re,$selector,$matches)) {
+      $selector = preg_replace($re_replace,'',$selector);
+    }
+
     $layouts = entity_get_controller('tile_layout')->loadBySelector($selector, $this->container);
     if (!empty($layouts)) {
       $layout = array_shift($layouts);

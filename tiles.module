@@ -239,7 +239,11 @@ function tiles_theme() {
 function tiles_page_build(&$page) {
   $container = tiles_get_container('region');
   $layout = $container->getLayout(current_path());
-  if ($layout) {
+  // Resource pages have a special handling of region tiles that places
+  // them within the content of the page. @see tiles_node_view()
+  // If this is a resource, don't add tiles to the page content region.
+  $is_resource = (isset($_GET['RCAssetNumber'])) ? TRUE : FALSE;
+  if ($layout && !$is_resource) {
     $container->buildPage($page, $layout);
   }
 
@@ -486,6 +490,14 @@ function tiles_node_view($node, $view_mode, $langcode) {
     if ($layout) {
       $node->content['tiles_build'] = tiles_index_layout($layout);
     }
+  }
+  // Add tiles to resource page main content area
+  elseif($view_mode == 'full' && $node->type == 'resource') {
+    $container = tiles_get_container('region');
+    $layout = $container->getLayout(current_path());
+
+    $node->content['tiles_build'] = $layout->getRenderTiles('content');
+
   }
 }
 
